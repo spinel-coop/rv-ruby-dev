@@ -16,10 +16,14 @@ jobs:
     outputs:
       tag: ${{ steps.determine-tag.outputs.tag }}
     steps:
-      - name: Set up Homebrew
-        uses: Homebrew/actions/setup-homebrew@main
-        with:
-          test-bot: false
+      - uses: actions/checkout@main
+      - name: Install Homebrew
+        run: |
+          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+          echo "/home/linuxbrew/.linuxbrew/bin" >> $GITHUB_PATH
+          echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"' >> /root/.bashrc
+          eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+          brew tap spinel-sh/rv-ruby .
 
       - name: Determine tag
         id: determine-tag
