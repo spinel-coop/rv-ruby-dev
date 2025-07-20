@@ -82,13 +82,13 @@ jobs:
         env:
           HOMEBREW_GITHUB_PACKAGES_USER: ${{ github.actor }}
           HOMEBREW_GITHUB_PACKAGES_TOKEN: ${{ github.token }}
-        run: brew pr-upload --debug --upload-only --root-url="https://ghcr.io/v2/${GITHUB_REPOSITORY_OWNER,,}/portable-ruby"
+        run: brew pr-upload --debug --upload-only --root-url="https://ghcr.io/v2/${GITHUB_REPOSITORY_OWNER,,}/rv-ruby"
 
       - name: Push tag
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
-          gh release create "${TAG}" --notes "Portable Ruby ${TAG}" --target "$(git rev-parse --verify HEAD)" --title "${TAG}"
+          gh release create "${TAG}" --notes "rv Ruby ${TAG}" --target "$(git rev-parse --verify HEAD)" --title "${TAG}"
 
       - name: Upload to GitHub Releases
         working-directory: bottles
