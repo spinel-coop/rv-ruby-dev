@@ -1,18 +1,14 @@
-# Homebrew Portable Ruby
+# rv ruby binaries
 
-Formulae and tools to build versions of Ruby that can be installed and run from anywhere on the filesystem.
+Tools to build versions of Ruby that can be installed and run from anywhere on the filesystem.
 
-## How do I install these formulae
+## How do I use these rubies
 
-Just `brew install homebrew/portable-ruby/<formula>`.
-
-## How do I build packages for these formulae
-
-Homebrew Portable Ruby is designed only for usage internally to Homebrew. If Portable Ruby isn't available for your platform, it is recommended you instead use Ruby from your system's package manager (if available) or rbenv/ruby-build. Usage of Portable Ruby outside of Homebrew, such as embedding into your own apps, is not a goal for this project.
+First, [install `rv`](https://github.com/spinel-sh/rv), and then run `rv ruby install`.
 
 ## How do I issue a new release
 
-[An automated release workflow is available to use](https://github.com/Homebrew/homebrew-portable-ruby/actions/workflows/release.yml).
+[An automated release workflow is available to use](https://github.com/spinel-sh/rv-ruby/actions/workflows/release.yml).
 Dispatch the workflow and all steps of building, tagging and uploading should be handled automatically.
 
 <details>
@@ -29,21 +25,17 @@ Copy the bottle `bottle*.tar.gz` and `bottle*.json` files into a directory on yo
 Upload these files to GitHub Packages with:
 
 ```sh
-brew pr-upload --upload-only --root-url=https://ghcr.io/v2/homebrew/portable-ruby
+brew pr-upload --upload-only --root-url=https://ghcr.io/v2/spinel-sh/rv-ruby
 ```
 
 And to GitHub releases:
 
 ```sh
-brew pr-upload --upload-only --root-url=https://github.com/Homebrew/homebrew-portable-ruby/releases/download/$VERSION
+brew pr-upload --upload-only --root-url=https://github.com/spinel-sh/rv-ruby/releases/download/$VERSION
 ```
 
 where `$VERSION` is the new package version.
 </details>
-
-## Current Status
-
-Used in production for Homebrew/brew.
 
 ## License
 

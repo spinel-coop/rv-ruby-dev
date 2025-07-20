@@ -63,7 +63,7 @@ module Homebrew
             safe_system HOMEBREW_BREW_FILE, "linkage", *verbose, name
             bottle_args = %w[
               --skip-relocation
-              --root-url=https://ghcr.io/v2/homebrew/portable-ruby
+              --root-url=https://ghcr.io/v2/spinel-sh/rv-ruby
               --json
               --no-rebuild
             ]
