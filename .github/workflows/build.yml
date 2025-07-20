@@ -16,14 +16,9 @@ jobs:
     strategy:
       matrix:
         include:
-          - os: 10.11-cross-${{github.run_id}}
-          - os: 11-arm64-cross-${{github.run_id}}
-          - os: ubuntu-latest
-            container: '{"image": "ghcr.io/homebrew/ubuntu22.04:main", "options": "--user=linuxbrew"}'
-            workdir: /github/home
+          - os: macos-14
+          - os: ubuntu-22.04
           - os: ubuntu-22.04-arm
-            container: '{"image": "ghcr.io/homebrew/ubuntu22.04:main", "options": "--user=linuxbrew"}'
-            workdir: /github/home
       fail-fast: false
     runs-on: ${{matrix.os}}
     container: ${{matrix.container && fromJSON(matrix.container) || ''}}
