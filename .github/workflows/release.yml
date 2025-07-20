@@ -61,11 +61,6 @@ jobs:
           eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
           brew tap spinel-sh/rv-ruby .
       
-      - name: Set up Homebrew
-        uses: Homebrew/actions/setup-homebrew@main
-        with:
-          test-bot: false
-
       - name: Checkout branch
         run: git checkout "${GITHUB_REF_NAME}"
 

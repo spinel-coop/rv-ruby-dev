@@ -33,13 +33,6 @@ jobs:
           echo "/home/linuxbrew/.linuxbrew/bin" >> $GITHUB_PATH
           eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
           brew tap spinel-sh/rv-ruby .
-      
-      - name: Set up Homebrew
-        uses: Homebrew/actions/setup-homebrew@main
-
-      - run: brew test-bot --only-cleanup-before
-
-      - run: brew test-bot --only-setup
 
       - name: Build Portable Ruby
         run: |
@@ -61,9 +54,3 @@ jobs:
           export HOMEBREW_USE_RUBY_FROM_PATH=1
           rm -rf "$(brew --repo)/Library/Homebrew/vendor/portable-ruby"
           brew config | awk -v s="${PWD}/portable-ruby/bin/ruby" '$0~s{r=1} 1; END{exit(!r)}'
-
-      - name: Post cleanup
-        if: always()
-        run: |
-          brew test-bot --only-cleanup-after
-          rm -rvf bottle portable-ruby
