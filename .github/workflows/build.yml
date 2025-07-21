@@ -18,7 +18,7 @@ jobs:
         include:
           - os: macos-14
           - os: ubuntu-22.04
-          - os: ubuntu-22.04-arm
+          # - os: ubuntu-22.04-arm
       fail-fast: false
     runs-on: ${{matrix.os}}
     container: ${{matrix.container && fromJSON(matrix.container) || ''}}
