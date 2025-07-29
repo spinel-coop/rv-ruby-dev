@@ -54,16 +54,9 @@ class PortableRuby < PortableFormula
   end
 
   def install
-    # Remove almost all bundled gems and replace with our own set.
-    rm_r ".bundle"
-    allowed_gems = ["debug"]
-    bundled_gems = File.foreach("gems/bundled_gems").select do |line|
-      line.blank? || line.start_with?("#") || allowed_gems.any? { |gem| line.match?(/\A#{Regexp.escape(gem)}\s/) }
+    bundled_gems = File.foreach("gems/bundled_gems").reject do |line|
+      line.blank? || line.start_with?("#")
     end
-    rm_r(Dir["gems/*.gem"].reject do |gem_path|
-      gem_basename = File.basename(gem_path)
-      allowed_gems.any? { |gem| gem_basename.match?(/\A#{Regexp.escape(gem)}-\d/) }
-    end)
     resources.each do |resource|
       resource.stage "gems"
       bundled_gems << "#{resource.name} #{resource.version}\n"
