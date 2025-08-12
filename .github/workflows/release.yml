@@ -22,7 +22,6 @@ jobs:
           /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
           echo "/home/linuxbrew/.linuxbrew/bin" >> $GITHUB_PATH
           eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
-          brew list | xargs brew uninstall --ignore-dependencies --force
           brew untap spinel-coop/rv-ruby --force || true
           brew tap spinel-coop/rv-ruby .
 
@@ -61,7 +60,6 @@ jobs:
           /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
           echo "/home/linuxbrew/.linuxbrew/bin" >> $GITHUB_PATH
           eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
-          brew list | xargs brew uninstall --ignore-dependencies --force
           brew untap spinel-coop/rv-ruby --force || true
           brew tap spinel-coop/rv-ruby .
 
