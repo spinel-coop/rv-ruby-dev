@@ -18,7 +18,7 @@ jobs:
       matrix:
         os: [self-hosted, ubuntu-22.04, ubuntu-22.04-arm]
         ruby: [3.4.5, 3.4.4, 3.4.3]
-      fail-fast: true
+      fail-fast: false
     runs-on: ${{matrix.os}}
     container: ${{matrix.container && fromJSON(matrix.container) || ''}}
     defaults:
