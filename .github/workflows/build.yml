@@ -37,7 +37,7 @@ jobs:
         run: |
           mkdir -p bottle/
           cd bottle
-          brew portable-package --verbose portable-ruby
+          brew portable-package --verbose portable-ruby@${{matrix.ruby}}
 
       - name: Upload Portable Ruby
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
