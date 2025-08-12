@@ -48,7 +48,7 @@ jobs:
       - name: Test Portable Ruby
         run: |
           mkdir -p portable-ruby/
-          tar --strip-components 2 -C portable-ruby -xf bottle/portable-ruby--*.tar.gz
+          tar --strip-components 2 -C portable-ruby -xf bottle/portable-ruby@*.tar.gz
           export PATH="${PWD}/portable-ruby/bin:${PATH}"
           export HOMEBREW_USE_RUBY_FROM_PATH=1
           rm -rf "$(brew --repo)/Library/Homebrew/vendor/portable-ruby"
