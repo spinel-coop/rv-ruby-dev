@@ -16,7 +16,7 @@ jobs:
   build:
     strategy:
       matrix:
-        os: [macos-14, ubuntu-22.04, ubuntu-22.04-arm]
+        os: [self-hosted, ubuntu-22.04, ubuntu-22.04-arm]
         ruby: [3.4.5, 3.4.4, 3.4.3]
       fail-fast: true
     runs-on: ${{matrix.os}}
