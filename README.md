@@ -4,11 +4,11 @@ Tools to build versions of Ruby that can be installed and run from anywhere on t
 
 ## How do I use these rubies
 
-First, [install `rv`](https://github.com/spinel-sh/rv), and then run `rv ruby install`.
+First, [install `rv`](https://github.com/spinel-coop/rv), and then run `rv ruby install`.
 
 ## How do I issue a new release
 
-[An automated release workflow is available to use](https://github.com/spinel-sh/rv-ruby/actions/workflows/release.yml).
+[An automated release workflow is available to use](https://github.com/spinel-coop/rv-ruby/actions/workflows/release.yml).
 Dispatch the workflow and all steps of building, tagging and uploading should be handled automatically.
 
 <details>
@@ -25,13 +25,13 @@ Copy the bottle `bottle*.tar.gz` and `bottle*.json` files into a directory on yo
 Upload these files to GitHub Packages with:
 
 ```sh
-brew pr-upload --upload-only --root-url=https://ghcr.io/v2/spinel-sh/rv-ruby
+brew pr-upload --upload-only --root-url=https://ghcr.io/v2/spinel-coop/rv-ruby
 ```
 
 And to GitHub releases:
 
 ```sh
-brew pr-upload --upload-only --root-url=https://github.com/spinel-sh/rv-ruby/releases/download/$VERSION
+brew pr-upload --upload-only --root-url=https://github.com/spinel-coop/rv-ruby/releases/download/$VERSION
 ```
 
 where `$VERSION` is the new package version.
