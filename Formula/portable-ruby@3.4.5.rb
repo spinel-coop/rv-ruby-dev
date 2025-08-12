@@ -47,12 +47,6 @@ class PortableRubyAT345 < PortableFormula
     end
   end
 
-  # Fix compile on macOS 10.11
-  patch do
-    url "https://github.com/Bo98/ruby/commit/7aec5ca6e8ec13d92307615c32a511e02437d7de.patch?full_index=1"
-    sha256 "644f706bbbb708c2e1d32de65138c335c3710e6d47f86624f9dd98806627e83f"
-  end
-
   def install
     bundled_gems = File.foreach("gems/bundled_gems").reject do |line|
       line.blank? || line.start_with?("#")

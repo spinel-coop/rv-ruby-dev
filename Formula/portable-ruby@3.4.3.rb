@@ -47,23 +47,10 @@ class PortableRubyAT343 < PortableFormula
     end
   end
 
-  # Fix compile on macOS 10.11
-  patch do
-    url "https://github.com/Bo98/ruby/commit/7aec5ca6e8ec13d92307615c32a511e02437d7de.patch?full_index=1"
-    sha256 "644f706bbbb708c2e1d32de65138c335c3710e6d47f86624f9dd98806627e83f"
-  end
-
   def install
-    # Remove almost all bundled gems and replace with our own set.
-    rm_r ".bundle"
-    allowed_gems = ["debug"]
-    bundled_gems = File.foreach("gems/bundled_gems").select do |line|
-      line.blank? || line.start_with?("#") || allowed_gems.any? { |gem| line.match?(/\A#{Regexp.escape(gem)}\s/) }
+    bundled_gems = File.foreach("gems/bundled_gems").reject do |line|
+      line.blank? || line.start_with?("#")
     end
-    rm_r(Dir["gems/*.gem"].reject do |gem_path|
-      gem_basename = File.basename(gem_path)
-      allowed_gems.any? { |gem| gem_basename.match?(/\A#{Regexp.escape(gem)}-\d/) }
-    end)
     resources.each do |resource|
       resource.stage "gems"
       bundled_gems << "#{resource.name} #{resource.version}\n"
