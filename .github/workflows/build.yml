@@ -53,3 +53,8 @@ jobs:
           export HOMEBREW_USE_RUBY_FROM_PATH=1
           rm -rf "$(brew --repo)/Library/Homebrew/vendor/portable-ruby"
           brew config | awk -v s="${PWD}/portable-ruby/bin/ruby" '$0~s{r=1} 1; END{exit(!r)}'
+
+      - name: Clean up Homebrew state
+        run: |
+          brew list | xargs brew uninstall --ignore-dependencies --force
+          brew untap spinel-sh/rv-ruby --force
