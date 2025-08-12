@@ -20,7 +20,6 @@ permissions:
 
 jobs:
   autobump:
-    if: github.repository_owner == 'Homebrew'
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/homebrew/ubuntu22.04:main
@@ -36,7 +35,7 @@ jobs:
       - name: Configure Git user
         uses: Homebrew/actions/git-user-config@main
         with:
-          username: ${{ (github.event_name == 'workflow_dispatch' && github.actor) || 'BrewTestBot' }}
+          username: ${{ (github.event_name == 'workflow_dispatch' && github.actor) || 'rv-bot' }}
 
       - name: Get list of autobump portable-ruby formulae
         id: autobump
@@ -46,7 +45,7 @@ jobs:
         uses: Homebrew/actions/bump-packages@main
         continue-on-error: true
         with:
-          token: ${{ secrets.HOMEBREW_PORTABLE_RUBY_REPO_WORKFLOW_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           formulae: ${{ github.event.inputs.formulae || steps.autobump.outputs.autobump_list }}
         env:
           HOMEBREW_TEST_BOT_AUTOBUMP: 1
