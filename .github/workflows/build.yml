@@ -2,7 +2,6 @@ name: Build
 
 on:
   workflow_call:
-  workflow_dispatch:
 
 permissions:
   contents: read
@@ -16,9 +15,10 @@ jobs:
   build:
     strategy:
       matrix:
-        # os: [self-hosted, ubuntu-22.04, ubuntu-22.04-arm]
-        os: [self-hosted]
-        ruby: [3.4.5, 3.4.4, 3.4.3]
+        include:
+          - os: macos-14
+          - os: ubuntu-22.04
+          - os: ubuntu-22.04-arm
       fail-fast: false
     runs-on: ${{matrix.os}}
     container: ${{matrix.container && fromJSON(matrix.container) || ''}}
@@ -32,25 +32,24 @@ jobs:
           /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
           echo "/home/linuxbrew/.linuxbrew/bin" >> $GITHUB_PATH
           eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
-          brew untap spinel-coop/rv-ruby --force || true
           brew tap spinel-coop/rv-ruby .
 
       - name: Build Portable Ruby
         run: |
           mkdir -p bottle/
           cd bottle
-          brew portable-package --verbose portable-ruby@${{matrix.ruby}}
+          brew portable-package --verbose portable-ruby
 
       - name: Upload Portable Ruby
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: bottles_${{matrix.os}}_${{matrix.ruby}}
+          name: bottles_${{matrix.os}}
           path: ${{matrix.workdir || github.workspace}}/bottle
 
       - name: Test Portable Ruby
         run: |
           mkdir -p portable-ruby/
-          tar --strip-components 2 -C portable-ruby -xf bottle/portable-ruby@*.tar.gz
+          tar --strip-components 2 -C portable-ruby -xf bottle/portable-ruby--*.tar.gz
           export PATH="${PWD}/portable-ruby/bin:${PATH}"
           export HOMEBREW_USE_RUBY_FROM_PATH=1
           rm -rf "$(brew --repo)/Library/Homebrew/vendor/portable-ruby"
