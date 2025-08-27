@@ -37,6 +37,10 @@ brew pr-upload --upload-only --root-url=https://github.com/spinel-coop/rv-ruby/r
 where `$VERSION` is the new package version.
 </details>
 
+## Thanks
+
+Thanks to the [Homebrew](https://brew.sh) team for the [portable-ruby](https://github.com/Homebrew/homebrew-portable-ruby) code we used as a starting point.
+
 ## License
 
-Code is under the [BSD 2-Clause "Simplified" License](https://github.com/Homebrew/homebrew-portable-ruby/blob/HEAD/LICENSE.txt).
+Code is under the [BSD 2-Clause "Simplified" License](/LICENSE.txt).
