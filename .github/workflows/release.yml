@@ -2,6 +2,10 @@ name: Release
 
 on:
   workflow_dispatch:
+    inputs:
+      version:
+        description: "Ruby version to build and release"
+        required: false
 
 env:
   HOMEBREW_DEVELOPER: 1
@@ -30,7 +34,8 @@ jobs:
           brew ruby -e "$(cat<<EOS
           require "formula"
 
-          tag = Formula["portable-ruby"].pkg_version.to_s
+          tag = "${{ github.event.inputs.version }}"
+          tag = Formula["portable-ruby"].pkg_version.to_s if tag.empty?
 
           existing_tag = Utils.safe_popen_read("git", "tag", "--list", tag)
           raise "Tag #{tag} already exists" if existing_tag.present?
