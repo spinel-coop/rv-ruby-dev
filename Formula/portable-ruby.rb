@@ -105,19 +105,6 @@ class PortableRuby < PortableFormula
     system "./configure", *args
     system "make", "extract-gems"
     system "make"
-
-    # Add a helper load path file so bundled gems can be easily used (used by brew's standalone/init.rb)
-    system "make", "ruby.pc"
-    arch = Utils.safe_popen_read("pkg-config", "--variable=arch", "./ruby-#{version.major_minor}.pc").chomp
-    mkdir_p "lib/#{arch}"
-    File.open("lib/#{arch}/portable_ruby_gems.rb", "w") do |file|
-      (Dir["extensions/*/*/*", base: ".bundle"] + Dir["gems/*/lib", base: ".bundle"]).each do |require_path|
-        file.write <<~RUBY
-          $:.unshift "\#{RbConfig::CONFIG["rubylibprefix"]}/gems/\#{RbConfig::CONFIG["ruby_version"]}/#{require_path}"
-        RUBY
-      end
-    end
-
     system "make", "install"
 
     abi_version = `#{bin}/ruby -rrbconfig -e 'print RbConfig::CONFIG["ruby_version"]'`
@@ -165,7 +152,6 @@ class PortableRuby < PortableFormula
       shell_output("#{ruby} -ropen-uri -e 'URI.open(\"https://google.com\") { |f| puts f.status.first }'").chomp
     system ruby, "-rrbconfig", "-e", <<~EOS
       Gem.discover_gems_on_require = false
-      require "portable_ruby_gems"
       require "debug"
       require "fiddle"
       require "bootsnap"
