@@ -16,15 +16,27 @@ jobs:
     strategy:
       matrix:
         include:
-          - os: macos-14
-          - os: ubuntu-22.04
-          - os: ubuntu-22.04-arm
+          - image: macos-13-xlarge
+            arch: arm64-macos13
+          - image: macos-13
+            arch: x86_64-macos13
+          - image: macos-14
+            arch: arm64-macos14
+          - image: macos-14-large
+            arch: x86_64-macos14
+          - image: macos-15
+            arch: arm64-macos15
+          - image: macos-15-large
+            arch: x86_64-macos15
+          - image: ubuntu-22.04
+            arch: x86_64-linux-gnu235
+          - image: ubuntu-22.04-arm
+            arch: aarch64-linux-gnu235
       fail-fast: false
-    runs-on: ${{matrix.os}}
-    container: ${{matrix.container && fromJSON(matrix.container) || ''}}
+    runs-on: ${{matrix.image}}
     defaults:
       run:
-        working-directory: ${{matrix.workdir || github.workspace}}
+        working-directory: ${{github.workspace}}
     steps:
       - uses: actions/checkout@main
       - name: Install Homebrew
@@ -43,8 +55,8 @@ jobs:
       - name: Upload Portable Ruby
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: bottles_${{matrix.os}}
-          path: ${{matrix.workdir || github.workspace}}/bottle
+          name: bottles_${{matrix.arch}}
+          path: ${{github.workspace}}/bottle
 
       - name: Test Portable Ruby
         run: |
