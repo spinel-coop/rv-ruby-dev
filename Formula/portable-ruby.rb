@@ -7,6 +7,7 @@ class PortableRuby < PortableFormula
   license "Ruby"
 
   depends_on "rust" => :build
+  depends_on "autoconf" => :build
   depends_on "pkgconf" => :build
   depends_on "portable-libyaml" => :build
   depends_on "portable-openssl" => :build
@@ -97,6 +98,7 @@ class PortableRuby < PortableFormula
     ENV["cppflags"] = ENV.delete("CPPFLAGS")
     ENV["cxxflags"] = ENV.delete("CXXFLAGS")
 
+    system "./autogen.sh"
     system "./configure", *args
     system "make", "extract-gems"
     system "make"
