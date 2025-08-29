@@ -3,15 +3,8 @@ require File.expand_path("../Abstract/portable-formula", __dir__)
 class PortableRuby < PortableFormula
   desc "Powerful, clean, object-oriented scripting language"
   homepage "https://www.ruby-lang.org/"
-  url "https://cache.ruby-lang.org/pub/ruby/3.4/ruby-3.4.5.tar.gz"
-  sha256 "1d88d8a27b442fdde4aa06dc99e86b0bbf0b288963d8433112dd5fac798fd5ee"
+  head "https://github.com/ruby/ruby.git", branch: "master"
   license "Ruby"
-
-  # This regex restricts matching to versions other than X.Y.0.
-  livecheck do
-    formula "ruby"
-    regex(/href=.*?ruby[._-]v?(\d+\.\d+\.(?:(?!0)\d+)(?:\.\d+)*)\.t/i)
-  end
 
   depends_on "rust" => :build
   depends_on "pkgconf" => :build
