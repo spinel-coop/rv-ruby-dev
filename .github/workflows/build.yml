@@ -9,7 +9,6 @@ permissions:
 env:
   HOMEBREW_DEVELOPER: 1
   HOMEBREW_NO_AUTO_UPDATE: 1
-  HOMEBREW_ARM64_TESTING: 1
 
 jobs:
   build:
@@ -17,6 +16,7 @@ jobs:
       matrix:
         include:
           - os: macos-14
+          - os: macos-13
           - os: ubuntu-22.04
           - os: ubuntu-22.04-arm
       fail-fast: false
@@ -36,6 +36,9 @@ jobs:
 
       - name: Build Portable Ruby
         run: |
+          if [[ "${{ runner.arch }}" == "ARM64" ]]; then
+            export HOMEBREW_ARM64_TESTING=1
+          fi
           mkdir -p bottle/
           cd bottle
           brew portable-package --verbose portable-ruby
@@ -48,6 +51,9 @@ jobs:
 
       - name: Test Portable Ruby
         run: |
+          if [[ "${{ runner.arch }}" == "ARM64" ]]; then
+            export HOMEBREW_ARM64_TESTING=1
+          fi
           mkdir -p portable-ruby/
           tar --strip-components 2 -C portable-ruby -xf bottle/portable-ruby--*.tar.gz
           export PATH="${PWD}/portable-ruby/bin:${PATH}"
