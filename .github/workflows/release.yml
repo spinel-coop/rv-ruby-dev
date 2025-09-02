@@ -62,12 +62,12 @@ jobs:
           path: bottles
           merge-multiple: true
 
-      # - name: Upload to GitHub Packages
-      #   working-directory: bottles
-      #   env:
-      #     HOMEBREW_GITHUB_PACKAGES_USER: ${{ github.actor }}
-      #     HOMEBREW_GITHUB_PACKAGES_TOKEN: ${{ github.token }}
-      #   run: brew pr-upload --debug --upload-only --root-url="https://ghcr.io/v2/${GITHUB_REPOSITORY_OWNER,,}/rv-ruby"
+      - name: Upload to GitHub Packages
+        working-directory: bottles
+        env:
+          HOMEBREW_GITHUB_PACKAGES_USER: ${{ github.actor }}
+          HOMEBREW_GITHUB_PACKAGES_TOKEN: ${{ github.token }}
+        run: brew pr-upload --debug --upload-only --root-url="https://ghcr.io/v2/${GITHUB_REPOSITORY,,}"
 
       - name: Push tag
         env:
