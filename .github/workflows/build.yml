@@ -2,6 +2,10 @@ name: Build
 
 on:
   workflow_call:
+    inputs:
+      formula:
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -15,8 +19,8 @@ jobs:
     strategy:
       matrix:
         include:
-          - os: macos-14
           - os: macos-13
+          - os: macos-14
           - os: ubuntu-22.04
           - os: ubuntu-22.04-arm
       fail-fast: false
@@ -41,7 +45,7 @@ jobs:
           fi
           mkdir -p bottle/
           cd bottle
-          brew portable-package --verbose portable-ruby
+          brew portable-package --verbose ${{inputs.formula}}
 
       - name: Upload Portable Ruby
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2

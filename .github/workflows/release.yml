@@ -2,6 +2,15 @@ name: Release
 
 on:
   workflow_dispatch:
+    inputs:
+      tag:
+        required: true
+        default:
+          # - 3.4.1
+          # - 3.4.2
+          # - 3.4.3
+          # - 3.4.4
+          - 3.4.5
 
 env:
   HOMEBREW_DEVELOPER: 1
@@ -11,44 +20,17 @@ permissions:
   contents: read
 
 jobs:
-  determine-tag:
-    runs-on: ubuntu-latest
-    outputs:
-      tag: ${{ steps.determine-tag.outputs.tag }}
-    steps:
-      - uses: actions/checkout@main
-      - name: Install Homebrew
-        run: |
-          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-          echo "/home/linuxbrew/.linuxbrew/bin" >> $GITHUB_PATH
-          eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
-          brew tap spinel-coop/rv-ruby .
-
-      - name: Determine tag
-        id: determine-tag
-        run: |
-          brew ruby -e "$(cat<<EOS
-          require "formula"
-
-          tag = Formula["portable-ruby"].pkg_version.to_s
-
-          existing_tag = Utils.safe_popen_read("git", "tag", "--list", tag)
-          raise "Tag #{tag} already exists" if existing_tag.present?
-
-          puts "Preparing for #{tag} release."
-          File.open(ENV["GITHUB_OUTPUT"], "a") { |f| f.puts "tag=#{tag}" }
-          EOS
-          )"
-
   build:
-    needs: determine-tag
-    uses: ./.github/workflows/build.yml
+    steps:
+    - uses: ./.github/workflows/build.yml
+      with:
+        formula: portable-ruby@${{ inputs.tag }}
 
   release:
-    needs: [determine-tag, build]
+    needs: build
     runs-on: ubuntu-latest
     env:
-      TAG: ${{ needs.determine-tag.outputs.tag }}
+      TAG: ${{ inputs.tag }}
     permissions:
       contents: write
       packages: write
