@@ -68,6 +68,11 @@ module Homebrew
               --no-rebuild
             ]
             safe_system HOMEBREW_BREW_FILE, "bottle", *verbose, *bottle_args, name
+
+            # remove duplicate version from bottle filename
+            Dir.glob("*.bottle.*").each do |f|
+              FileUtils.mv(f, f.sub(/\@.*?\-\-/, '--'))
+            end
           rescue => e
             ofail e
           end
