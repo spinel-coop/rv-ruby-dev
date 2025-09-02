@@ -21,10 +21,9 @@ permissions:
 
 jobs:
   build:
-    steps:
-    - uses: ./.github/workflows/build.yml
-      with:
-        formula: portable-ruby@${{ inputs.tag }}
+    uses: ./.github/workflows/build.yml
+    with:
+      formula: portable-ruby@${{ inputs.tag }}
 
   release:
     needs: build
