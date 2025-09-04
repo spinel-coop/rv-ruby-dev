@@ -32,16 +32,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runner:
-          # - macos-13
-          # - macos-14
-          - ubuntu-22.04
-          # - ubuntu-22.04-arm
         formula: ${{ fromJSON(needs.setup.outputs.formulas) }}
     uses: ./.github/workflows/build.yml
     with:
       formula: ${{ matrix.formula }}
-      runner: ${{ matrix.runner }}
 
   release:
     needs: [setup, build]
@@ -90,7 +84,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
-          gh release create "${TAG}" --notes "rv Ruby ${TAG}" --target "$(git rev-parse --verify HEAD)" --title "${TAG}"
+          gh release create "${TAG}" --notes "rv ruby ${TAG}" --target "$(git rev-parse --verify HEAD)" --title "${TAG}"
 
       - name: Upload to GitHub Releases
         working-directory: bottles

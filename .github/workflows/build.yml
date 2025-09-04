@@ -6,9 +6,6 @@ on:
       formula:
         required: true
         type: string
-      runner:
-        required: true
-        type: string
 
 permissions:
   contents: read
@@ -19,7 +16,14 @@ env:
 
 jobs:
   build:
-    runs-on: ${{ inputs.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # - macos-13
+        # - macos-14
+        - ubuntu-22.04
+        # - ubuntu-22.04-arm
+    runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@main
       - name: Install Homebrew
