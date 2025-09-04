@@ -19,9 +19,9 @@ env:
 
 jobs:
   build:
-    runs-on: ${{ inputs.os }}
+    runs-on: ${{ inputs.runner }}
     steps:
-      - run: echo ${{ inputs.formula }} on ${{ inputs.os }}
+      - run: echo ${{ inputs.formula }} on ${{ inputs.runner }}
       # - uses: actions/checkout@main
       # - name: Install Homebrew
       #   run: |

@@ -18,12 +18,14 @@ jobs:
       date: ${{ steps.setup.outputs.date }}
     steps:
       - uses: actions/checkout@main
+      - run: date
+      - run: date +%Y%m%d
       - id: setup
         run: |
           cd Formula
           list=$(ls portable-ruby* | jq --raw-input | jq --slurp --compact-output 'map(. |= .[:-3])')
           echo formulas=$list >> "$GITHUB_OUTPUT"
-          echo date=$(date +%Y%m%d) >> "$GITHUB_OUTPUT"
+          echo "date=$(date +%Y%m%d)" >> "$GITHUB_OUTPUT"
 
   build:
     needs: setup
@@ -33,9 +35,12 @@ jobs:
         runner:
           # - macos-13
           # - macos-14
-          - ubuntu-22.04
+          - ubuntu-latest
           # - ubuntu-22.04-arm
         formula: ${{ fromJSON(needs.setup.outputs.formulas) }}
+    # runs-on: ubuntu-latest
+    # steps:
+    #   - run: echo ${{ matrix.formula }} on ${{ matrix.runner }}
     uses: ./.github/workflows/build.yml
     with:
       formula: ${{ matrix.formula }}
