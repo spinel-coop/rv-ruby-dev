@@ -35,7 +35,7 @@ jobs:
           # - macos-14
           - ubuntu-22.04
           # - ubuntu-22.04-arm
-        formula: ${{ fromJSON(needs.setup.outputs.list) }}
+        formula: ${{ fromJSON(needs.setup.outputs.formulas) }}
     uses: ./.github/workflows/build.yml
     with:
       formula: ${{ matrix.formula }}
