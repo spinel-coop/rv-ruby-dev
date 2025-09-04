@@ -21,38 +21,37 @@ jobs:
   build:
     runs-on: ${{ inputs.runner }}
     steps:
-      - run: echo ${{ inputs.formula }} on ${{ inputs.runner }}
-      # - uses: actions/checkout@main
-      # - name: Install Homebrew
-      #   run: |
-      #     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-      #     echo "/home/linuxbrew/.linuxbrew/bin" >> $GITHUB_PATH
-      #     eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
-      #     brew tap spinel-coop/rv-ruby .
+      - uses: actions/checkout@main
+      - name: Install Homebrew
+        run: |
+          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+          echo "/home/linuxbrew/.linuxbrew/bin" >> $GITHUB_PATH
+          eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+          brew tap spinel-coop/rv-ruby .
 
-      # - name: Build Portable Ruby
-      #   run: |
-      #     if [[ "${{ runner.arch }}" == "ARM64" ]]; then
-      #       export HOMEBREW_ARM64_TESTING=1
-      #     fi
-      #     mkdir -p bottle/
-      #     cd bottle
-      #     brew portable-package --verbose ${{inputs.formula}}
+      - name: Build Portable Ruby
+        run: |
+          if [[ "${{ runner.arch }}" == "ARM64" ]]; then
+            export HOMEBREW_ARM64_TESTING=1
+          fi
+          mkdir -p bottle/
+          cd bottle
+          brew portable-package --verbose ${{inputs.formula}}
 
-      # - name: Upload Portable Ruby
-      #   uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-      #   with:
-      #     name: bottles_${{matrix.os}}
-      #     path: ${{matrix.workdir || github.workspace}}/bottle
+      - name: Upload Portable Ruby
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: bottles_${{matrix.os}}
+          path: ${{matrix.workdir || github.workspace}}/bottle
 
-      # - name: Test Portable Ruby
-      #   run: |
-      #     if [[ "${{ runner.arch }}" == "ARM64" ]]; then
-      #       export HOMEBREW_ARM64_TESTING=1
-      #     fi
-      #     mkdir -p portable-ruby/
-      #     tar --strip-components 2 -C portable-ruby -xf bottle/portable-ruby--*.tar.gz
-      #     export PATH="${PWD}/portable-ruby/bin:${PATH}"
-      #     export HOMEBREW_USE_RUBY_FROM_PATH=1
-      #     rm -rf "$(brew --repo)/Library/Homebrew/vendor/portable-ruby"
-      #     brew config | awk -v s="${PWD}/portable-ruby/bin/ruby" '$0~s{r=1} 1; END{exit(!r)}'
+      - name: Test Portable Ruby
+        run: |
+          if [[ "${{ runner.arch }}" == "ARM64" ]]; then
+            export HOMEBREW_ARM64_TESTING=1
+          fi
+          mkdir -p portable-ruby/
+          tar --strip-components 2 -C portable-ruby -xf bottle/portable-ruby--*.tar.gz
+          export PATH="${PWD}/portable-ruby/bin:${PATH}"
+          export HOMEBREW_USE_RUBY_FROM_PATH=1
+          rm -rf "$(brew --repo)/Library/Homebrew/vendor/portable-ruby"
+          brew config | awk -v s="${PWD}/portable-ruby/bin/ruby" '$0~s{r=1} 1; END{exit(!r)}'
