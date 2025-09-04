@@ -17,12 +17,13 @@ env:
 jobs:
   build:
     strategy:
-      fail-fast: false
       matrix:
-        # - macos-13
-        # - macos-14
-        - ubuntu-22.04
-        # - ubuntu-22.04-arm
+        runner:
+          # - macos-13
+          # - macos-14
+          - ubuntu-22.04
+          # - ubuntu-22.04-arm
+      fail-fast: false
     runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@main
