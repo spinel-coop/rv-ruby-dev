@@ -30,7 +30,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os:
+        runner:
           # - macos-13
           # - macos-14
           - ubuntu-22.04
@@ -39,7 +39,7 @@ jobs:
     uses: ./.github/workflows/build.yml
     with:
       formula: ${{ matrix.formula }}
-      os: ${{ matrix.os }}
+      runner: ${{ matrix.runner }}
 
   release:
     needs: [setup, build]
