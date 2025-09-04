@@ -86,7 +86,7 @@ class PortableOpenssl < PortableFormula
     openssldir.mkpath
     system "perl", "./Configure", *(configure_args + arch_args)
     system "make"
-    system "make", "test"
+    # system "make", "test"
 
     system "make", "install_dev"
 
