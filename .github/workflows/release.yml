@@ -11,35 +11,46 @@ permissions:
   contents: read
 
 jobs:
-  list:
+  setup:
     runs-on: ubuntu-latest
     outputs:
-      list: ${{ steps.list.outputs.list }}
+      formulas: ${{ steps.setup.outputs.formulas }}
+      date: ${{ steps.setup.outputs.date }}
     steps:
       - uses: actions/checkout@main
-      - id: list
+      - id: setup
         run: |
           cd Formula
-          list=$(ls portable-ruby* | jq --raw-input | jq --slurp --compact-output '{formula: map(. |= .[:-3])}')
-          echo "list=$list" >> "$GITHUB_OUTPUT"
+          list=$(ls portable-ruby* | jq --raw-input | jq --slurp --compact-output 'map(. |= .[:-3])')
+          echo formulas=$list >> "$GITHUB_OUTPUT"
+          echo date=$(date +%Y%m%d) >> "$GITHUB_OUTPUT"
 
   build:
-    needs: list
+    needs: setup
     strategy:
       fail-fast: false
-      matrix: ${{ fromJSON(needs.list.outputs.list) }}
+      matrix:
+        os:
+          # - macos-13
+          # - macos-14
+          - ubuntu-22.04
+          # - ubuntu-22.04-arm
+        formula: ${{ fromJSON(needs.setup.outputs.list) }}
     uses: ./.github/workflows/build.yml
     with:
       formula: ${{ matrix.formula }}
+      os: ${{ matrix.os }}
 
   release:
-    needs: build
+    needs: [setup, build]
     runs-on: ubuntu-latest
     permissions:
       contents: write
       packages: write
+    env:
+      TAG: ${{ needs.setup.outputs.date }}
     steps:
-      - run: echo releasing
+      - run: echo releasing $TAG now
       # - uses: actions/checkout@main
       # - name: Install Homebrew
       #   run: |
