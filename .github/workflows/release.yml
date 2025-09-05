@@ -24,7 +24,6 @@ jobs:
         run: |
           cd Formula
           list=$(ls portable-ruby* | jq --raw-input | jq --slurp --compact-output 'map(. |= .[:-3])')
-          list='["portable-ruby@3.4.5"]'
           echo formulas=$list >> "$GITHUB_OUTPUT"
           echo "date=$(date +%Y%m%d)" >> "$GITHUB_OUTPUT"
 
