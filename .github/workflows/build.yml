@@ -19,8 +19,8 @@ jobs:
     strategy:
       matrix:
         runner:
-          - macos-13
-          - macos-14
+          - macos-13 # intel
+          - macos-14 # arm
           - ubuntu-22.04
           - ubuntu-22.04-arm
       fail-fast: false
