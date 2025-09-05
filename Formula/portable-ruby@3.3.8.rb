@@ -13,7 +13,6 @@ class PortableRubyAT338 < PortableFormula
     regex(/href=.*?ruby[._-]v?(\d+\.\d+\.(?:(?!0)\d+)(?:\.\d+)*)\.t/i)
   end
 
-  depends_on "rust" => :build
   depends_on "pkgconf" => :build
   depends_on "portable-libyaml" => :build
   depends_on "portable-openssl" => :build
