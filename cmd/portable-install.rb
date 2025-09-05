@@ -35,7 +35,7 @@ module Homebrew
           name = "portable-#{name}" unless name.start_with? "portable-"
           begin
             # On Linux, install glibc and linux-headers from bottles and don't install their build dependencies.
-            bottled_dep_allowlist = /\A(?:glibc@.*|linux-headers@.*|rust|pkgconfig)\z/
+            bottled_dep_allowlist = /\A(?:glibc@.*|linux-headers@.*|rust|rustup|pkgconfig)\z/
             deps = Dependency.expand(Formula[name], cache_key: "portable-package-#{name}") do |_dependent, dep|
               Dependency.prune if dep.test? || dep.optional?
 
@@ -45,6 +45,8 @@ module Homebrew
             end.map(&:name)
 
             bottled_deps, deps = deps.partition { |dep| bottled_dep_allowlist.match?(dep) }
+            puts "Bottled deps: #{bottled_deps.inspect}"
+            puts "Other deps: #{deps.inspect}"
 
             safe_system HOMEBREW_BREW_FILE, "install", *verbose, *bottled_deps if bottled_deps.present?
 
