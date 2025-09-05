@@ -13,6 +13,7 @@ class PortableRubyAT338 < PortableFormula
     regex(/href=.*?ruby[._-]v?(\d+\.\d+\.(?:(?!0)\d+)(?:\.\d+)*)\.t/i)
   end
 
+  depends_on "rustup" => :build
   depends_on "pkgconf" => :build
   depends_on "portable-libyaml" => :build
   depends_on "portable-openssl" => :build
@@ -48,6 +49,8 @@ class PortableRubyAT338 < PortableFormula
   end
 
   def install
+    system "rustup default stable"
+
     bundled_gems = File.foreach("gems/bundled_gems").to_a
     resources.each do |resource|
       resource.stage "gems"
