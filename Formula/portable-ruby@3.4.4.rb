@@ -49,9 +49,7 @@ class PortableRubyAT344 < PortableFormula
   end
 
   def install
-    bundled_gems = File.foreach("gems/bundled_gems").reject do |line|
-      line.blank? || line.start_with?("#")
-    end
+    bundled_gems = File.foreach("gems/bundled_gems").to_a
     resources.each do |resource|
       resource.stage "gems"
       bundled_gems << "#{resource.name} #{resource.version}\n"
