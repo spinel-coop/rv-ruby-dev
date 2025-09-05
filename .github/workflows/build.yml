@@ -27,7 +27,6 @@ jobs:
     runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@main
-      - uses: dtolnay/rust-toolchain@stable
       - name: Install Homebrew
         run: |
           /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
@@ -35,8 +34,10 @@ jobs:
           eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
           brew tap spinel-coop/rv-ruby .
 
+      - uses: dtolnay/rust-toolchain@stable
       - name: Build Portable Ruby
         run: |
+          rustc --version
           if [[ "${{ runner.arch }}" == "ARM64" ]]; then
             export HOMEBREW_ARM64_TESTING=1
           fi
