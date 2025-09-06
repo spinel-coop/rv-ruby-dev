@@ -36,10 +36,9 @@ module Homebrew
 
         args.named.each do |name|
           begin
-            safe_system HOMEBREW_BREW_FILE, "portable-install", "--build-bottle", *verbose, name
-            unless args.no_uninstall_deps?
-              safe_system HOMEBREW_BREW_FILE, "uninstall", "--force", "--ignore-dependencies", *verbose, *deps
-            end
+            args = %w[--no-test]
+            args << "--no-uninstall-deps" if args.include?("--no-uninstall-deps")
+            safe_system HOMEBREW_BREW_FILE, "portable-install", *args, *verbose, name
             safe_system HOMEBREW_BREW_FILE, "test", *verbose, name
             puts "Linkage information:"
             safe_system HOMEBREW_BREW_FILE, "linkage", *verbose, name

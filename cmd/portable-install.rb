@@ -14,11 +14,15 @@ module Homebrew
 
           Build portable formulae.
         EOS
+        switch "--no-test", description: "Skip testing after install"
+        switch "--no-uninstall-deps",
+          description: "Don't uninstall all dependencies of portable formulae before testing."
         switch "-v", "--verbose",
-               description: "Pass `--verbose` to `brew` commands."
+          description: "Pass `--verbose` to `brew` commands."
         named_args :formula, min: 1
       end
 
+      sig { override.void }
       def run
         ENV["HOMEBREW_DEVELOPER"] = "1"
 
@@ -54,6 +58,10 @@ module Homebrew
             safe_system HOMEBREW_BREW_FILE, "install", "--build-bottle", *verbose, *deps
 
             safe_system HOMEBREW_BREW_FILE, "install", "--build-bottle", *verbose, name
+            safe_system HOMEBREW_BREW_FILE, "test", *verbose, name unless args.no_test?
+            unless args.no_uninstall_deps?
+              safe_system HOMEBREW_BREW_FILE, "uninstall", "--force", "--ignore-dependencies", *verbose, *deps
+            end
           rescue => e
             ofail e
           end
