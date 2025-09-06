@@ -15,10 +15,10 @@ class PortableRubyAT338 < PortableFormula
 
   depends_on "pkgconf" => :build
   depends_on "portable-libyaml" => :build
-  depends_on "portable-openssl" => :build
+  depends_on "portable-openssl@3.4.1" => :build
 
   on_linux do
-    depends_on "portable-libffi" => :build
+    depends_on "portable-libffi@3.4.7" => :build
     depends_on "portable-libxcrypt" => :build
     depends_on "portable-zlib" => :build
   end
