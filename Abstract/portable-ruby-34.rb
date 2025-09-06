@@ -15,6 +15,7 @@ class PortableRuby34 < PortableFormula
         regex(/href=.*?ruby[._-]v?(\d+\.\d+\.(?:(?!0)\d+)(?:\.\d+)*)\.t/i)
       end
 
+      depends_on "rustup" => :build
       depends_on "pkgconf" => :build
       depends_on "portable-libyaml" => :build
       depends_on "portable-openssl" => :build
@@ -52,6 +53,9 @@ class PortableRuby34 < PortableFormula
   end
 
   def install
+    # provide rustc for YJIT compilation
+    system "rustup install stable --profile minimal"
+
     bundled_gems = File.foreach("gems/bundled_gems").reject do |line|
       line.blank? || line.start_with?("#")
     end
@@ -77,6 +81,7 @@ class PortableRuby34 < PortableFormula
       --disable-install-doc
       --disable-install-rdoc
       --disable-dependency-tracking
+      --enable-yjit
     ]
 
     # We don't specify OpenSSL as we want it to use the pkg-config, which `--with-openssl-dir` will disable
