@@ -1,9 +1,6 @@
-require File.expand_path("../Abstract/portable-formula", __dir__)
+require File.expand_path("./portable-formula", __dir__)
 
-module PortableRubyFormulaMixin
-end
-
-class PortableRubyFormula < PortableFormula
+class PortableRuby33Formula < PortableFormula
   desc "Powerful, clean, object-oriented scripting language"
   homepage "https://www.ruby-lang.org/"
   license "Ruby"
@@ -135,7 +132,7 @@ class PortableRubyFormula < PortableFormula
 
     if OS.linux?
       # Don't restrict to a specific GCC compiler binary we used (e.g. gcc-5).
-      inreplace lib / "ruby/#{abi_version}/#{abi_arch}/rbconfig.rb" do |s|
+      inreplace lib/"ruby/#{abi_version}/#{abi_arch}/rbconfig.rb" do |s|
         s.gsub! ENV.cxx, "c++"
         s.gsub! ENV.cc, "cc"
         # Change e.g. `CONFIG["AR"] = "gcc-ar-11"` to `CONFIG["AR"] = "ar"`
@@ -145,16 +142,19 @@ class PortableRubyFormula < PortableFormula
       end
 
       # Ship libcrypt.a so that building native gems doesn't need system libcrypt installed.
-      cp libxcrypt.lib / "libcrypt.a", lib / "libcrypt.a"
+      cp libxcrypt.lib/"libcrypt.a", lib/"libcrypt.a"
     end
 
     libexec.mkpath
-    cp openssl.libexec / "etc/openssl/cert.pem", libexec / "cert.pem"
-    openssl_rb = lib / "ruby/#{abi_version}/openssl.rb"
+    cp openssl.libexec/"etc/openssl/cert.pem", libexec/"cert.pem"
+    openssl_rb = lib/"ruby/#{abi_version}/openssl.rb"
     inreplace openssl_rb, "require 'openssl.so'", <<~EOS.chomp
       ENV["PORTABLE_RUBY_SSL_CERT_FILE"] = ENV["SSL_CERT_FILE"] || File.expand_path("../../libexec/cert.pem", RbConfig.ruby)
       \\0
     EOS
+
+    system bin/"gem", "update", "--system"
+    system bin/"gem", "install", "bundler"
 
     super
   end
@@ -162,14 +162,14 @@ class PortableRubyFormula < PortableFormula
   def test
     cp_r Dir["#{prefix}/*"], testpath
     ENV["PATH"] = "/usr/bin:/bin"
-    ruby = (testpath / "bin/ruby").realpath
+    ruby = (testpath/"bin/ruby").realpath
     assert_equal version.to_s.split("-").first, shell_output("#{ruby} -e 'puts RUBY_VERSION'").chomp
     assert_equal ruby.to_s, shell_output("#{ruby} -e 'puts RbConfig.ruby'").chomp
     assert_equal "3632233996",
       shell_output("#{ruby} -rzlib -e 'puts Zlib.crc32(\"test\")'").chomp
     assert_equal " \t\n`><=;|&{(",
       shell_output("#{ruby} -rreadline -e 'puts Readline.basic_word_break_characters'").chomp
-    assert_equal (version < "3.4.0" ? '{"a"=>"b"}' : '{"a" => "b"}'),
+    assert_equal '{"a"=>"b"}',
       shell_output("#{ruby} -ryaml -e 'puts YAML.load(\"a: b\")'").chomp
     assert_equal "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       shell_output("#{ruby} -ropenssl -e 'puts OpenSSL::Digest::SHA256.hexdigest(\"\")'").chomp
@@ -182,10 +182,10 @@ class PortableRubyFormula < PortableFormula
       require "fiddle"
       require "bootsnap"
     EOS
-    system testpath / "bin/gem", "environment"
-    system testpath / "bin/bundle", "init"
+    system testpath/"bin/gem", "environment"
+    system testpath/"bin/bundle", "init"
     # install gem with native components
-    system testpath / "bin/gem", "install", "byebug"
+    system testpath/"bin/gem", "install", "byebug"
     assert_match "byebug", shell_output("#{testpath}/bin/byebug --version")
 
     super
