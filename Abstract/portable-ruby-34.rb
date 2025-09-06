@@ -65,11 +65,9 @@ class PortableRuby34 < PortableFormula
     end
     File.write("gems/bundled_gems", bundled_gems.join)
 
-    libyaml = Formula["portable-libyaml"]
-    libxcrypt = Formula["portable-libxcrypt"]
-    openssl = Formula["portable-openssl"]
-    libffi = Formula["portable-libffi"]
-    zlib = Formula["portable-zlib"]
+    dep_names = deps.map(&:name)
+    libyaml = Formula[dep_names.find{|d| d.start_with?("portable-libyaml") }]
+    openssl = Formula[dep_names.find{|d| d.start_with?("portable-openssl") }]
 
     args = portable_configure_args + %W[
       --prefix=#{prefix}
@@ -90,6 +88,10 @@ class PortableRuby34 < PortableFormula
     ]
 
     if OS.linux?
+      libffi = Formula[dep_names.find{|d| d.start_with?("portable-libffi") }]
+      libxcrypt = Formula[dep_names.find{|d| d.start_with?("portable-libxcrypt") }]
+      zlib = Formula[dep_names.find{|d| d.start_with?("portable-zlib") }]
+
       ENV["XCFLAGS"] = "-I#{libxcrypt.opt_include}"
       ENV["XLDFLAGS"] = "-L#{libxcrypt.opt_lib}"
 
