@@ -48,6 +48,8 @@ module Homebrew
             end.map(&:name)
 
             bottled_deps, deps = deps.partition { |dep| bottled_dep_allowlist.match?(dep) }
+            puts "Bottled deps: #{bottled_deps.inspect}"
+            puts "Other deps: #{deps.inspect}"
 
             safe_system HOMEBREW_BREW_FILE, "install", *verbose, *bottled_deps if bottled_deps.present?
 
