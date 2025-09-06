@@ -153,9 +153,6 @@ class PortableRuby34Formula < PortableFormula
       \\0
     EOS
 
-    system bin/"gem", "update", "--system"
-    system bin/"gem", "install", "bundler"
-
     super
   end
 
