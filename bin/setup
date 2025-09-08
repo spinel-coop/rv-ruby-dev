@@ -2,5 +2,6 @@
 set -euo pipefail
 set -vx
 
-mkdir -p "$(brew --prefix)/Library/Taps/spinel-coop"
-ln -sf . "$(brew --prefix)/Library/Taps/spinel-coop/homebrew-rv-ruby-dev"
+brew tap spinel-coop/rv-ruby-dev .
+rm -rf "$(brew --prefix)/Library/Taps/spinel-coop/homebrew-rv-ruby-dev"
+ln -sf "$(pwd)" "$(brew --prefix)/Library/Taps/spinel-coop/homebrew-rv-ruby-dev"
