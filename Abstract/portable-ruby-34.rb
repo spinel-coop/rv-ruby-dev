@@ -54,7 +54,7 @@ class PortableRuby34 < PortableFormula
 
   def install
     # provide rustc for YJIT compilation
-    system "rustup install stable --profile minimal"
+    system "rustup install 1.58 --profile minimal"
 
     bundled_gems = File.foreach("gems/bundled_gems").reject do |line|
       line.blank? || line.start_with?("#")
