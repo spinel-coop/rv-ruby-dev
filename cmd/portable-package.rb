@@ -18,6 +18,10 @@ module Homebrew
                description: "Don't uninstall all dependencies of portable formulae before testing."
         switch "-v", "--verbose",
                description: "Pass `--verbose` to `brew` commands."
+        switch "--with-yjit",
+               description: "Build Ruby with YJIT included (the default)."
+        switch "--without-yjit",
+               description: "Build Ruby without YJIT included."
         named_args :formula, min: 1
       end
 
@@ -28,6 +32,8 @@ module Homebrew
         verbose = []
         verbose << "--verbose" if args.verbose?
         verbose << "--debug" if args.debug?
+
+        yjit = args.without_yjit? ? "--without-yjit" : "--with-yjit"
 
         # If test-bot cleanup is performed and auto-updates are disabled, this might not already be installed.
         unless DevelopmentTools.ca_file_handles_most_https_certificates?
@@ -41,6 +47,7 @@ module Homebrew
             bottled_dep_allowlist = /\A(?:glibc@|linux-headers@|rustup)/
             deps = Dependency.expand(Formula[name], cache_key: "portable-package-#{name}") do |_dependent, dep|
               Dependency.prune if dep.test? || dep.optional?
+              Dependency.prune if dep.name == "rustup" && args.without_yjit?
 
               next unless bottled_dep_allowlist.match?(dep.name)
 
@@ -56,7 +63,7 @@ module Homebrew
             # Build bottles for all other dependencies.
             safe_system HOMEBREW_BREW_FILE, "install", "--build-bottle", *verbose, *deps
 
-            safe_system HOMEBREW_BREW_FILE, "install", "--build-bottle", *verbose, name
+            safe_system HOMEBREW_BREW_FILE, "install", "--build-bottle", yjit, *verbose, name
             unless args.no_uninstall_deps?
               safe_system HOMEBREW_BREW_FILE, "uninstall", "--force", "--ignore-dependencies", *verbose, *deps
             end
