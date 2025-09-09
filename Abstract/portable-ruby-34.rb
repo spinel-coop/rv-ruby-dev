@@ -1,6 +1,6 @@
 require File.expand_path("../Abstract/portable-formula", __dir__)
 
-class PortableRuby34 < PortableFormula
+class PortableRuby34 < Formula
   def self.inherited(subclass)
     subclass.class_eval do
       super
@@ -15,7 +15,11 @@ class PortableRuby34 < PortableFormula
         regex(/href=.*?ruby[._-]v?(\d+\.\d+\.(?:(?!0)\d+)(?:\.\d+)*)\.t/i)
       end
 
-      depends_on "rustup" => :build
+      keg_only "portable formulae are keg-only"
+
+      option "without-yjit", "Build Ruby without YJIT (enables glibc < 2.35)"
+
+      depends_on "rustup" => :build if build.with? "yjit"
       depends_on "pkgconf" => :build
       depends_on "portable-libyaml@0.2.5" => :build
       depends_on "portable-openssl@3.5.1" => :build
@@ -24,6 +28,16 @@ class PortableRuby34 < PortableFormula
         depends_on "portable-libffi@3.5.1" => :build
         depends_on "portable-libxcrypt@4.4.38" => :build
         depends_on "portable-zlib@1.3.1" => :build
+
+        unless build.with? "yjit"
+          on_intel do
+            depends_on "glibc@2.13" => :build
+          end
+          on_arm do
+            depends_on "glibc@2.17" => :build
+          end
+          depends_on "linux-headers@4.4" => :build
+        end
       end
 
       resource "msgpack" do
@@ -48,13 +62,16 @@ class PortableRuby34 < PortableFormula
             json.first["number"]
           end
         end
+
       end
+
+      prepend PortableFormulaMixin
     end
   end
 
   def install
     # provide rustc for YJIT compilation
-    system "rustup install 1.58 --profile minimal"
+    system "rustup install 1.58 --profile minimal" if build.with? "yjit"
 
     bundled_gems = File.foreach("gems/bundled_gems").reject do |line|
       line.blank? || line.start_with?("#")
@@ -79,8 +96,9 @@ class PortableRuby34 < PortableFormula
       --disable-install-doc
       --disable-install-rdoc
       --disable-dependency-tracking
-      --enable-yjit
     ]
+
+    args += %W[--enable-yjit] if build.with? "yjit"
 
     # We don't specify OpenSSL as we want it to use the pkg-config, which `--with-openssl-dir` will disable
     args += %W[
