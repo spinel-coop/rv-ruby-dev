@@ -41,11 +41,10 @@ module Homebrew
         end
 
         args.named.each do |name|
-          name = "portable-#{name}" unless name.start_with? "portable-"
           begin
             # On Linux, install glibc and linux-headers from bottles and don't install their build dependencies.
             bottled_dep_allowlist = /\A(?:glibc@|linux-headers@|rustup)/
-            deps = Dependency.expand(Formula[name], cache_key: "portable-package-#{name}") do |_dependent, dep|
+            deps = Dependency.expand(Formula[name], cache_key: "rv-package-#{name}") do |_dependent, dep|
               Dependency.prune if dep.test? || dep.optional?
               Dependency.prune if dep.name == "rustup" && args.without_yjit?
 
@@ -77,6 +76,7 @@ module Homebrew
               --no-rebuild
             ]
             safe_system HOMEBREW_BREW_FILE, "bottle", *verbose, *bottle_args, name
+
             update_bottle_names name, args.without_yjit?
           rescue => e
             ofail e
@@ -85,7 +85,6 @@ module Homebrew
       end
 
       def update_bottle_names(name, disable_yjit)
-
         Dir.glob("*.bottle.json").each do |j|
           json = File.read j
           json.gsub! "#{name}--", "ruby-"

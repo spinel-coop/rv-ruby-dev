@@ -1,90 +1,74 @@
 require File.expand_path("../Abstract/portable-formula", __dir__)
 
-class PortableRuby34 < Formula
-  def self.inherited(subclass)
-    subclass.class_eval do
-      super
+class RvRubyAT338 < PortableFormula
+  desc "Powerful, clean, object-oriented scripting language"
+  homepage "https://www.ruby-lang.org/"
+  url "https://cache.ruby-lang.org/pub/ruby/3.3/ruby-3.3.8.tar.gz"
+  sha256 "5ae28a87a59a3e4ad66bc2931d232dbab953d0aa8f6baf3bc4f8f80977c89cab"
+  license "Ruby"
 
-      desc "Powerful, clean, object-oriented scripting language"
-      homepage "https://www.ruby-lang.org/"
-      license "Ruby"
+  # This regex restricts matching to versions other than X.Y.0.
+  livecheck do
+    formula "ruby"
+    regex(/href=.*?ruby[._-]v?(\d+\.\d+\.(?:(?!0)\d+)(?:\.\d+)*)\.t/i)
+  end
 
-      # This regex restricts matching to versions other than X.Y.0.
-      livecheck do
-        formula "ruby"
-        regex(/href=.*?ruby[._-]v?(\d+\.\d+\.(?:(?!0)\d+)(?:\.\d+)*)\.t/i)
+  depends_on "pkgconf" => :build
+  depends_on "portable-libyaml" => :build
+  depends_on "portable-openssl" => :build
+
+  on_linux do
+    depends_on "portable-libffi" => :build
+    depends_on "portable-libxcrypt" => :build
+    depends_on "portable-zlib" => :build
+  end
+
+  resource "msgpack" do
+    url "https://rubygems.org/downloads/msgpack-1.8.0.gem"
+    sha256 "e64ce0212000d016809f5048b48eb3a65ffb169db22238fb4b72472fecb2d732"
+
+    livecheck do
+      url "https://rubygems.org/api/v1/versions/msgpack.json"
+      strategy :json do |json|
+        json.first["number"]
       end
+    end
+  end
 
-      keg_only "portable formulae are keg-only"
+  resource "bootsnap" do
+    url "https://rubygems.org/downloads/bootsnap-1.18.4.gem"
+    sha256 "ac4c42af397f7ee15521820198daeff545e4c360d2772c601fbdc2c07d92af55"
 
-      option "without-yjit", "Build Ruby without YJIT (enables glibc < 2.35)"
-
-      depends_on "rustup" => :build unless build.without? "yjit"
-      depends_on "pkgconf" => :build
-      depends_on "portable-libyaml@0.2.5" => :build
-      depends_on "portable-openssl@3.5.1" => :build
-
-      on_linux do
-        depends_on "portable-libffi@3.5.1" => :build
-        depends_on "portable-libxcrypt@4.4.38" => :build
-        depends_on "portable-zlib@1.3.1" => :build
-
-        if build.without? "yjit"
-          on_intel do
-            depends_on "glibc@2.13" => :build
-          end
-          on_arm do
-            depends_on "glibc@2.17" => :build
-          end
-          depends_on "linux-headers@4.4" => :build
-        end
+    livecheck do
+      url "https://rubygems.org/api/v1/versions/bootsnap.json"
+      strategy :json do |json|
+        json.first["number"]
       end
-
-      resource "msgpack" do
-        url "https://rubygems.org/downloads/msgpack-1.8.0.gem"
-        sha256 "e64ce0212000d016809f5048b48eb3a65ffb169db22238fb4b72472fecb2d732"
-
-        livecheck do
-          url "https://rubygems.org/api/v1/versions/msgpack.json"
-          strategy :json do |json|
-            json.first["number"]
-          end
-        end
-      end
-
-      resource "bootsnap" do
-        url "https://rubygems.org/downloads/bootsnap-1.18.6.gem"
-        sha256 "0ae2393c1e911e38be0f24e9173e7be570c3650128251bf06240046f84a07d00"
-
-        livecheck do
-          url "https://rubygems.org/api/v1/versions/bootsnap.json"
-          strategy :json do |json|
-            json.first["number"]
-          end
-        end
-
-      end
-
-      prepend PortableFormulaMixin
     end
   end
 
   def install
-    # provide rustc for YJIT compilation
-    system "rustup install 1.58 --profile minimal" unless build.without? "yjit"
-
-    bundled_gems = File.foreach("gems/bundled_gems").reject do |line|
-      line.blank? || line.start_with?("#")
+    # Remove almost all bundled gems and replace with our own set.
+    rm_r ".bundle"
+    allowed_gems = ["debug"]
+    bundled_gems = File.foreach("gems/bundled_gems").select do |line|
+      line.blank? || line.start_with?("#") || allowed_gems.any? { |gem| line.match?(/\A#{Regexp.escape(gem)}\s/) }
     end
+    rm_r(Dir["gems/*.gem"].reject do |gem_path|
+      gem_basename = File.basename(gem_path)
+      allowed_gems.any? { |gem| gem_basename.match?(/\A#{Regexp.escape(gem)}-\d/) }
+    end)
     resources.each do |resource|
       resource.stage "gems"
       bundled_gems << "#{resource.name} #{resource.version}\n"
     end
     File.write("gems/bundled_gems", bundled_gems.join)
 
-    dep_names = deps.map(&:name)
-    libyaml = Formula[dep_names.find{|d| d.start_with?("portable-libyaml") }]
-    openssl = Formula[dep_names.find{|d| d.start_with?("portable-openssl") }]
+    libyaml = Formula["portable-libyaml"]
+    libxcrypt = Formula["portable-libxcrypt"]
+    openssl = Formula["portable-openssl"]
+    libffi = Formula["portable-libffi"]
+    zlib = Formula["portable-zlib"]
 
     args = portable_configure_args + %W[
       --prefix=#{prefix}
@@ -98,18 +82,12 @@ class PortableRuby34 < Formula
       --disable-dependency-tracking
     ]
 
-    args += %W[--enable-yjit] unless build.without? "yjit"
-
     # We don't specify OpenSSL as we want it to use the pkg-config, which `--with-openssl-dir` will disable
     args += %W[
       --with-libyaml-dir=#{libyaml.opt_prefix}
     ]
 
     if OS.linux?
-      libffi = Formula[dep_names.find{|d| d.start_with?("portable-libffi") }]
-      libxcrypt = Formula[dep_names.find{|d| d.start_with?("portable-libxcrypt") }]
-      zlib = Formula[dep_names.find{|d| d.start_with?("portable-zlib") }]
-
       ENV["XCFLAGS"] = "-I#{libxcrypt.opt_include}"
       ENV["XLDFLAGS"] = "-L#{libxcrypt.opt_lib}"
 
@@ -153,16 +131,14 @@ class PortableRuby34 < Formula
     abi_arch = `#{bin}/ruby -rrbconfig -e 'print RbConfig::CONFIG["arch"]'`
 
     if OS.linux?
-      if build.without? "yjit"
-        # Don't restrict to a specific GCC compiler binary we used (e.g. gcc-5).
-        inreplace lib/"ruby/#{abi_version}/#{abi_arch}/rbconfig.rb" do |s|
-          s.gsub! ENV.cxx, "c++"
-          s.gsub! ENV.cc, "cc"
-          # Change e.g. `CONFIG["AR"] = "gcc-ar-11"` to `CONFIG["AR"] = "ar"`
-          s.gsub!(/(CONFIG\[".+"\] = )"gcc-(.*)-\d+"/, '\\1"\\2"')
-          # C++ compiler might have been disabled because we break it with glibc@* builds
-          s.sub!(/(CONFIG\["CXX"\] = )"false"/, '\\1"c++"')
-        end
+      # Don't restrict to a specific GCC compiler binary we used (e.g. gcc-5).
+      inreplace lib/"ruby/#{abi_version}/#{abi_arch}/rbconfig.rb" do |s|
+        s.gsub! ENV.cxx, "c++"
+        s.gsub! ENV.cc, "cc"
+        # Change e.g. `CONFIG["AR"] = "gcc-ar-11"` to `CONFIG["AR"] = "ar"`
+        s.gsub!(/(CONFIG\[".+"\] = )"gcc-(.*)-\d+"/, '\\1"\\2"')
+        # C++ compiler might have been disabled because we break it with glibc@* builds
+        s.sub!(/(CONFIG\["CXX"\] = )"false"/, '\\1"c++"')
       end
 
       # Ship libcrypt.a so that building native gems doesn't need system libcrypt installed.
@@ -178,7 +154,7 @@ class PortableRuby34 < Formula
     EOS
   end
 
-  def test
+  test do
     cp_r Dir["#{prefix}/*"], testpath
     ENV["PATH"] = "/usr/bin:/bin"
     ruby = (testpath/"bin/ruby").realpath
@@ -188,7 +164,7 @@ class PortableRuby34 < Formula
       shell_output("#{ruby} -rzlib -e 'puts Zlib.crc32(\"test\")'").chomp
     assert_equal " \t\n`><=;|&{(",
       shell_output("#{ruby} -rreadline -e 'puts Readline.basic_word_break_characters'").chomp
-    assert_equal '{"a" => "b"}',
+    assert_equal '{"a"=>"b"}',
       shell_output("#{ruby} -ryaml -e 'puts YAML.load(\"a: b\")'").chomp
     assert_equal "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       shell_output("#{ruby} -ropenssl -e 'puts OpenSSL::Digest::SHA256.hexdigest(\"\")'").chomp
@@ -207,6 +183,5 @@ class PortableRuby34 < Formula
     system testpath/"bin/gem", "install", "byebug"
     assert_match "byebug",
       shell_output("#{testpath}/bin/byebug --version")
-    super
   end
 end
