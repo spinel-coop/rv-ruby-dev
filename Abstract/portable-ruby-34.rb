@@ -19,7 +19,7 @@ class PortableRuby34 < Formula
 
       option "without-yjit", "Build Ruby without YJIT (enables glibc < 2.35)"
 
-      depends_on "rustup" => :build if build.with? "yjit"
+      depends_on "rustup" => :build unless build.without? "yjit"
       depends_on "pkgconf" => :build
       depends_on "portable-libyaml@0.2.5" => :build
       depends_on "portable-openssl@3.5.1" => :build
@@ -29,7 +29,7 @@ class PortableRuby34 < Formula
         depends_on "portable-libxcrypt@4.4.38" => :build
         depends_on "portable-zlib@1.3.1" => :build
 
-        unless build.with? "yjit"
+        if build.without? "yjit"
           on_intel do
             depends_on "glibc@2.13" => :build
           end
@@ -71,7 +71,7 @@ class PortableRuby34 < Formula
 
   def install
     # provide rustc for YJIT compilation
-    system "rustup install 1.58 --profile minimal" if build.with? "yjit"
+    system "rustup install 1.58 --profile minimal" unless build.without? "yjit"
 
     bundled_gems = File.foreach("gems/bundled_gems").reject do |line|
       line.blank? || line.start_with?("#")
@@ -98,7 +98,7 @@ class PortableRuby34 < Formula
       --disable-dependency-tracking
     ]
 
-    args += %W[--enable-yjit] if build.with? "yjit"
+    args += %W[--enable-yjit] unless build.without? "yjit"
 
     # We don't specify OpenSSL as we want it to use the pkg-config, which `--with-openssl-dir` will disable
     args += %W[
@@ -153,7 +153,7 @@ class PortableRuby34 < Formula
     abi_arch = `#{bin}/ruby -rrbconfig -e 'print RbConfig::CONFIG["arch"]'`
 
     if OS.linux?
-      unless build.with? "yjit"
+      if build.without? "yjit"
         # Don't restrict to a specific GCC compiler binary we used (e.g. gcc-5).
         inreplace lib/"ruby/#{abi_version}/#{abi_arch}/rbconfig.rb" do |s|
           s.gsub! ENV.cxx, "c++"
