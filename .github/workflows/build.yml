@@ -23,10 +23,6 @@ jobs:
           - macos-14 # arm
           - ubuntu-22.04
           - ubuntu-22.04-arm
-        yjit: [with-yjit, without-yjit]
-        exclude:
-          - { runner: macos-13, yjit: without-yjit }
-          - { runner: macos-14, yjit: without-yjit }
       fail-fast: false
     runs-on: ${{ matrix.runner }}
     steps:
@@ -45,7 +41,7 @@ jobs:
           fi
           mkdir -p bottle/
           cd bottle
-          brew portable-package --verbose --${{ matrix.yjit }} ${{ inputs.formula }}
+          brew portable-package --verbose --with-yjit ${{ inputs.formula }}
 
       - name: Upload Portable Ruby
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
