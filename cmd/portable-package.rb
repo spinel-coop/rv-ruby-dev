@@ -77,9 +77,20 @@ module Homebrew
               --no-rebuild
             ]
             safe_system HOMEBREW_BREW_FILE, "bottle", *verbose, *bottle_args, name
+            update_bottle_names name, args.without_yjit?
           rescue => e
             ofail e
           end
+        end
+      end
+
+      def update_bottle_names(name, disable_yjit)
+        Dir.glob("*.bottle.json").each do |j|
+          File.write j, File.read(j).gsub("#{name}--", "ruby-")
+        end
+
+        Dir.glob("#{name}*").each do |f|
+          FileUtil.mv(f, f.gsub("#{name}--", "ruby-"))
         end
       end
     end
