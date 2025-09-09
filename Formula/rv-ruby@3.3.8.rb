@@ -13,14 +13,16 @@ class RvRubyAT338 < PortableFormula
     regex(/href=.*?ruby[._-]v?(\d+\.\d+\.(?:(?!0)\d+)(?:\.\d+)*)\.t/i)
   end
 
+  option "without-yjit", "Build Ruby without YJIT (required for glibc < 2.35)"
+
   depends_on "pkgconf" => :build
-  depends_on "portable-libyaml" => :build
-  depends_on "portable-openssl" => :build
+  depends_on "portable-libyaml@0.2.5" => :build
+  depends_on "portable-openssl@3.5.1" => :build
 
   on_linux do
-    depends_on "portable-libffi" => :build
-    depends_on "portable-libxcrypt" => :build
-    depends_on "portable-zlib" => :build
+    depends_on "portable-libffi@3.5.1" => :build
+    depends_on "portable-libxcrypt@4.4.38" => :build
+    depends_on "portable-zlib@1.3.1" => :build
   end
 
   resource "msgpack" do
@@ -64,11 +66,9 @@ class RvRubyAT338 < PortableFormula
     end
     File.write("gems/bundled_gems", bundled_gems.join)
 
-    libyaml = Formula["portable-libyaml"]
-    libxcrypt = Formula["portable-libxcrypt"]
-    openssl = Formula["portable-openssl"]
-    libffi = Formula["portable-libffi"]
-    zlib = Formula["portable-zlib"]
+    dep_names = deps.map(&:name)
+    libyaml = Formula[dep_names.find{|d| d.start_with?("portable-libyaml") }]
+    openssl = Formula[dep_names.find{|d| d.start_with?("portable-openssl") }]
 
     args = portable_configure_args + %W[
       --prefix=#{prefix}
@@ -88,6 +88,10 @@ class RvRubyAT338 < PortableFormula
     ]
 
     if OS.linux?
+      libffi = Formula[dep_names.find{|d| d.start_with?("portable-libffi") }]
+      libxcrypt = Formula[dep_names.find{|d| d.start_with?("portable-libxcrypt") }]
+      zlib = Formula[dep_names.find{|d| d.start_with?("portable-zlib") }]
+
       ENV["XCFLAGS"] = "-I#{libxcrypt.opt_include}"
       ENV["XLDFLAGS"] = "-L#{libxcrypt.opt_lib}"
 

@@ -17,7 +17,7 @@ class RvRuby34 < Formula
 
       keg_only "portable formulae are keg-only"
 
-      option "without-yjit", "Build Ruby without YJIT (enables glibc < 2.35)"
+      option "without-yjit", "Build Ruby without YJIT (required for glibc < 2.35)"
 
       depends_on "rustup" => :build unless build.without? "yjit"
       depends_on "pkgconf" => :build
