@@ -85,12 +85,19 @@ module Homebrew
       end
 
       def update_bottle_names(name, disable_yjit)
+
         Dir.glob("*.bottle.json").each do |j|
-          File.write j, File.read(j).gsub("#{name}--", "ruby-")
+          json = File.read j
+          json.gsub! "#{name}--", "ruby-"
+          json.gsub! ERB::Util.url_encode(name), "ruby"
+          File.write j, json
         end
 
+        yjit_tag = disable_yjit ? ".no_yjit." : "."
         Dir.glob("#{name}*").each do |f|
-          FileUtil.mv(f, f.gsub("#{name}--", "ruby-"))
+          r = f.gsub("#{name}--", "ruby-")
+          r = r.gsub(".bottle.", yjit_tag)
+          FileUtils.mv f, r
         end
       end
     end
