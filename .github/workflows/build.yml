@@ -27,6 +27,11 @@ jobs:
     runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@main
+      - uses: ruby/setup-ruby@latest
+        with:
+          ruby-version: '3.3'
+        if: startsWith(matrix.runner, 'macos') && startsWith(inputs.formula, 'rv-ruby-3.3')
+
       - name: Install Homebrew
         run: |
           /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"

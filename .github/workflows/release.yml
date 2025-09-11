@@ -24,7 +24,7 @@ jobs:
         run: |
           cd Formula
           list=$(ls rv-ruby* | jq --raw-input | jq --slurp --compact-output 'map(. |= .[:-3])')
-          list='["rv-ruby@3.4.5"]'
+          list='["rv-ruby@3.3.8"]'
           echo formulas=$list >> "$GITHUB_OUTPUT"
           echo "date=$(date +%Y%m%d)" >> "$GITHUB_OUTPUT"
 
