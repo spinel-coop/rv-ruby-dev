@@ -28,6 +28,8 @@ jobs:
     steps:
       - uses: actions/checkout@main
       - uses: ruby/setup-ruby@latest
+      # Static gem extensions typically require the same Ruby version available already
+      - uses: ruby/setup-ruby@v1
         with:
           ruby-version: '3.3'
         if: startsWith(matrix.runner, 'macos') && startsWith(inputs.formula, 'rv-ruby-3.3')
