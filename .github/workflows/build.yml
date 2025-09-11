@@ -53,7 +53,7 @@ jobs:
       - name: Upload rv Ruby
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: bottles_rv-ruby@${{ inputs.version }}_${{ matrix.runner }}
+          name: bottles_ruby@${{ inputs.version }}_${{ matrix.runner }}
           path: ${{github.workspace}}/bottle
 
       - name: Test rv Ruby
@@ -61,9 +61,9 @@ jobs:
           if [[ "${{ runner.arch }}" == "ARM64" ]]; then
             export HOMEBREW_ARM64_TESTING=1
           fi
-          mkdir -p portable-ruby/
+          mkdir -p rv-ruby/
           tar --strip-components 2 -C rv-ruby -xf bottle/ruby*.tar.gz
-          export PATH="${PWD}/portable-ruby/bin:${PATH}"
+          export PATH="${PWD}/rv-ruby/bin:${PATH}"
           export HOMEBREW_USE_RUBY_FROM_PATH=1
           rm -rf "$(brew --repo)/Library/Homebrew/vendor/portable-ruby"
-          brew config | awk -v s="${PWD}/portable-ruby/bin/ruby" '$0~s{r=1} 1; END{exit(!r)}'
+          brew config | awk -v s="${PWD}/rv-ruby/bin/ruby" '$0~s{r=1} 1; END{exit(!r)}'
