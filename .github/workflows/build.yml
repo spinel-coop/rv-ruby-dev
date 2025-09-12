@@ -56,14 +56,14 @@ jobs:
           name: bottles_ruby@${{ inputs.version }}_${{ matrix.runner }}
           path: ${{github.workspace}}/bottle
 
-      - name: Test rv Ruby
+      - name: Test Portable Ruby
         run: |
           if [[ "${{ runner.arch }}" == "ARM64" ]]; then
             export HOMEBREW_ARM64_TESTING=1
           fi
-          mkdir -p rv-ruby/
-          tar --strip-components 2 -C rv-ruby -xf bottle/ruby*.tar.gz
-          export PATH="${PWD}/rv-ruby/bin:${PATH}"
+          mkdir -p portable-ruby/
+          tar --strip-components 2 -C portable-ruby -xf bottle/*.tar.gz
+          export PATH="${PWD}/portable-ruby/bin:${PATH}"
           export HOMEBREW_USE_RUBY_FROM_PATH=1
           rm -rf "$(brew --repo)/Library/Homebrew/vendor/portable-ruby"
-          brew config | awk -v s="${PWD}/rv-ruby/bin/ruby" '$0~s{r=1} 1; END{exit(!r)}'
+          brew config | awk -v s="${PWD}/portable-ruby/bin/ruby" '$0~s{r=1} 1; END{exit(!r)}'
