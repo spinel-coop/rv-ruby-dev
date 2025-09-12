@@ -53,12 +53,12 @@ jobs:
           fi
           mkdir -p bottle/
           cd bottle
-          brew portable-package --verbose --with-yjit rv-ruby@${{ inputs.version }}
+          brew portable-package --verbose --with-yjit portable-ruby@${{ inputs.version }}
 
       - name: Upload rv Ruby
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: bottles_ruby@${{ inputs.version }}_${{ matrix.runner }}
+          name: bottles_portable-ruby@${{ inputs.version }}_${{ matrix.runner }}
           path: ${{github.workspace}}/bottle
 
       - name: Test Portable Ruby
