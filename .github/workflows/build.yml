@@ -41,9 +41,9 @@ jobs:
 
       - name: Install Homebrew
         run: |
-          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-          echo "/home/linuxbrew/.linuxbrew/bin" >> $GITHUB_PATH
-          eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+          # /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+          # echo "/home/linuxbrew/.linuxbrew/bin" >> $GITHUB_PATH
+          # eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
           brew tap spinel-coop/rv-ruby .
 
       - name: Build rv Ruby
@@ -55,11 +55,11 @@ jobs:
           cd bottle
           brew portable-package --verbose --with-yjit rv-ruby@${{ inputs.version }}
 
-      - name: Upload rv Ruby
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        with:
-          name: bottles_portable-ruby@${{ inputs.version }}_${{ matrix.runner }}
-          path: ${{github.workspace}}/bottle
+      # - name: Upload rv Ruby
+      #   uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      #   with:
+      #     name: bottles_portable-ruby@${{ inputs.version }}_${{ matrix.runner }}
+      #     path: ${{github.workspace}}/bottle
 
       - name: Test Portable Ruby
         run: |
