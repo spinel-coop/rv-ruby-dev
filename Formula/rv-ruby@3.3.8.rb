@@ -74,6 +74,7 @@ class RvRubyAT338 < PortableFormula
       --prefix=#{prefix}
       --enable-load-relative
       --with-static-linked-ext
+      --with-baseruby="$(which ruby)"
       --with-out-ext=win32,win32ole
       --without-gmp
       --disable-install-doc
