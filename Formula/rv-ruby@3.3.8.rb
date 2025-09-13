@@ -19,6 +19,10 @@ class RvRubyAT338 < PortableFormula
   depends_on "portable-libyaml@0.2.5" => :build
   depends_on "portable-openssl@3.5.1" => :build
 
+  on_macos do
+    depends_on "ruby@3.3" => :build
+  end
+
   on_linux do
     depends_on "portable-libffi@3.5.1" => :build
     depends_on "portable-libxcrypt@4.4.38" => :build
@@ -74,13 +78,18 @@ class RvRubyAT338 < PortableFormula
       --prefix=#{prefix}
       --enable-load-relative
       --with-static-linked-ext
-      --with-baseruby="$(which ruby)"
       --with-out-ext=win32,win32ole
       --without-gmp
       --disable-install-doc
       --disable-install-rdoc
       --disable-dependency-tracking
     ]
+
+    ruby = Formula["ruby@3.3"]
+    raise "oh no"
+
+    ruby = `which ruby`.chomp
+    args += ["--with-baseruby=#{ruby_path}"]
 
     # We don't specify OpenSSL as we want it to use the pkg-config, which `--with-openssl-dir` will disable
     args += %W[
