@@ -68,6 +68,7 @@ jobs:
           fi
           mkdir -p portable-ruby/
           tar --strip-components 2 -C portable-ruby -xf bottle/*.tar.gz
+          ${PWD}/portable-ruby/bin/ruby --version
           export PATH="${PWD}/portable-ruby/bin:${PATH}"
           export HOMEBREW_USE_RUBY_FROM_PATH=1
           rm -rf "$(brew --repo)/Library/Homebrew/vendor/portable-ruby"
