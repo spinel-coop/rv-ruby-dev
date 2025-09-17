@@ -66,5 +66,5 @@ jobs:
           mkdir -p rv-ruby/
           tar --strip-components 2 -C rv-ruby -xf bottle/*.tar.gz
           export PATH="${PWD}/rv-ruby/bin:${PATH}"
-          ruby -v
+          ruby --version --yjit
           ruby -r debug -r bigdecimal -r json -r yaml -r reline -e "true"
