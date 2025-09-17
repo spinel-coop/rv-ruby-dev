@@ -85,12 +85,6 @@ class RvRubyAT338 < PortableFormula
       --disable-dependency-tracking
     ]
 
-    ruby = Formula["ruby@3.3"]
-    raise "oh no"
-
-    ruby = `which ruby`.chomp
-    args += ["--with-baseruby=#{ruby_path}"]
-
     # We don't specify OpenSSL as we want it to use the pkg-config, which `--with-openssl-dir` will disable
     args += %W[
       --with-libyaml-dir=#{libyaml.opt_prefix}
