@@ -73,7 +73,7 @@ end
 
 class PortableFormula < Formula
   desc "Abstract portable formula"
-  homepage "https://github.com/Homebrew/homebrew-portable-ruby"
+  homepage "https://github.com/spinel-coop/rv-ruby"
 
   def self.inherited(subclass)
     subclass.class_eval do
