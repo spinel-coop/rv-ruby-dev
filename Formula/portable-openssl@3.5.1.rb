@@ -74,6 +74,7 @@ class PortableOpensslAT351 < PortableFormula
       no-module
       no-shared
       no-engine
+      no-makedepend
     ]
   end
 
