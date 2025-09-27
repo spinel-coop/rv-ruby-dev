@@ -43,7 +43,7 @@ module Homebrew
         args.named.each do |name|
           begin
             # On Linux, install glibc and linux-headers from bottles and don't install their build dependencies.
-            bottled_dep_allowlist = /\A(?:glibc@|linux-headers@|rustup)/
+            bottled_dep_allowlist = /\A(?:glibc@|linux-headers@|ruby@|rustup)/
             deps = Dependency.expand(Formula[name], cache_key: "rv-package-#{name}") do |_dependent, dep|
               Dependency.prune if dep.test? || dep.optional?
               Dependency.prune if dep.name == "rustup" && args.without_yjit?
