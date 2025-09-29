@@ -19,10 +19,6 @@ class RvRubyAT339 < PortableFormula
   depends_on "portable-libyaml@0.2.5" => :build
   depends_on "portable-openssl@3.5.1" => :build
 
-  on_macos do
-    depends_on "ruby@3.3" => :build
-  end
-
   on_linux do
     depends_on "portable-libffi@3.5.1" => :build
     depends_on "portable-libxcrypt@4.4.38" => :build
