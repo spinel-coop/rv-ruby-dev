@@ -7,12 +7,12 @@ require "dependency"
 
 module Homebrew
   module Cmd
-    class PortablePackageCmd < AbstractCommand
+    class RvPackageCmd < AbstractCommand
       cmd_args do
         usage_banner <<~EOS
-          `portable-package` <formulae>
+          `rv-package` <formulae>
 
-          Build and package portable formulae.
+          Build and package rv formulae.
         EOS
         switch "--no-uninstall-deps",
                description: "Don't uninstall all dependencies of portable formulae before testing."
