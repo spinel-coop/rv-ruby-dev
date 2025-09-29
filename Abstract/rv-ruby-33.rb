@@ -89,6 +89,8 @@ class RvRuby33 < Formula
       --disable-dependency-tracking
     ]
 
+    args += %W[--baseruby=#{ENV["BASERUBY"]}] if ENV.key?("BASERUBY")
+
     args += %W[--enable-yjit] unless build.without? "yjit"
 
     # We don't specify OpenSSL as we want it to use the pkg-config, which `--with-openssl-dir` will disable
