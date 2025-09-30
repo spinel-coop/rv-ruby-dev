@@ -2,10 +2,6 @@ name: Release
 
 on:
   workflow_dispatch:
-    inputs:
-      tag:
-        required: true
-        default: 3.4.5
 
 env:
   HOMEBREW_DEVELOPER: 1
@@ -15,19 +11,41 @@ permissions:
   contents: read
 
 jobs:
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      versions: ${{ steps.setup.outputs.versions }}
+      date: ${{ steps.setup.outputs.date }}
+    steps:
+      - uses: actions/checkout@main
+      - run: date
+      - run: date +%Y%m%d
+      - id: setup
+        run: |
+          cd Formula
+          list=$(ls rv-ruby* | cut -d '@' -f 2 | jq --raw-input | jq --slurp --compact-output 'map(. |= .[:-3])')
+          list='["3.3.8"]'
+          echo versions=$list >> "$GITHUB_OUTPUT"
+          echo "date=$(date +%Y%m%d)" >> "$GITHUB_OUTPUT"
+
   build:
+    needs: setup
+    strategy:
+      fail-fast: false
+      matrix:
+        version: ${{ fromJSON(needs.setup.outputs.versions) }}
     uses: ./.github/workflows/build.yml
     with:
-      formula: portable-ruby@${{ inputs.tag }}
+      version: ${{ matrix.version }}
 
   release:
-    needs: build
+    needs: [setup, build]
     runs-on: ubuntu-latest
-    env:
-      TAG: ${{ inputs.tag }}
     permissions:
       contents: write
       packages: write
+    env:
+      TAG: ${{ needs.setup.outputs.date }}
     steps:
       - uses: actions/checkout@main
       - name: Install Homebrew
@@ -67,7 +85,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
-          gh release create "${TAG}" --notes "rv Ruby ${TAG}" --target "$(git rev-parse --verify HEAD)" --title "${TAG}"
+          gh release create "${TAG}" --notes "rv ruby ${TAG}" --target "$(git rev-parse --verify HEAD)" --title "${TAG}"
 
       - name: Upload to GitHub Releases
         working-directory: bottles

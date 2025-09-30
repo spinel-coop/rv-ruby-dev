@@ -1,9 +1,14 @@
 name: Build
 
 on:
+  workflow_dispatch:
+    inputs:
+      version:
+        required: true
+        type: string
   workflow_call:
     inputs:
-      formula:
+      version:
         required: true
         type: string
 
@@ -18,19 +23,23 @@ jobs:
   build:
     strategy:
       matrix:
-        include:
-          - os: macos-13
-          - os: macos-14
-          - os: ubuntu-22.04
-          - os: ubuntu-22.04-arm
+        runner:
+          - macos-13 # intel
+          - macos-14 # arm
+          - ubuntu-22.04
+          - ubuntu-22.04-arm
       fail-fast: false
-    runs-on: ${{matrix.os}}
-    container: ${{matrix.container && fromJSON(matrix.container) || ''}}
-    defaults:
-      run:
-        working-directory: ${{matrix.workdir || github.workspace}}
+    runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@main
+
+      # Static gem extensions typically require the same Ruby version available already
+      - uses: ruby/setup-ruby@v1
+        id: setup-ruby
+        with:
+          ruby-version: ${{ inputs.version }}
+        if: startsWith(matrix.runner, 'macos') && !startsWith(inputs.version, '3.4')
+
       - name: Install Homebrew
         run: |
           /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
@@ -38,29 +47,28 @@ jobs:
           eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
           brew tap spinel-coop/rv-ruby .
 
-      - name: Build Portable Ruby
+      - name: Build rv Ruby
         run: |
           if [[ "${{ runner.arch }}" == "ARM64" ]]; then
             export HOMEBREW_ARM64_TESTING=1
+          fi
+          if [[ -n "${{ steps.setup-ruby.outputs.ruby-prefix }}" ]]; then
+            export HOMEBREW_BASERUBY="${{ steps.setup-ruby.outputs.ruby-prefix }}/bin/ruby"
           fi
           mkdir -p bottle/
           cd bottle
-          brew portable-package --verbose ${{inputs.formula}}
+          brew rv-package --verbose --with-yjit rv-ruby@${{ inputs.version }}
 
-      - name: Upload Portable Ruby
+      - name: Upload rv Ruby
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: bottles_${{matrix.os}}
-          path: ${{matrix.workdir || github.workspace}}/bottle
+          name: rv-ruby@${{ inputs.version }}_${{ matrix.runner }}
+          path: ${{github.workspace}}/bottle
 
       - name: Test Portable Ruby
         run: |
-          if [[ "${{ runner.arch }}" == "ARM64" ]]; then
-            export HOMEBREW_ARM64_TESTING=1
-          fi
-          mkdir -p portable-ruby/
-          tar --strip-components 2 -C portable-ruby -xf bottle/portable-ruby--*.tar.gz
-          export PATH="${PWD}/portable-ruby/bin:${PATH}"
-          export HOMEBREW_USE_RUBY_FROM_PATH=1
-          rm -rf "$(brew --repo)/Library/Homebrew/vendor/portable-ruby"
-          brew config | awk -v s="${PWD}/portable-ruby/bin/ruby" '$0~s{r=1} 1; END{exit(!r)}'
+          mkdir -p rv-ruby/
+          tar --strip-components 2 -C rv-ruby -xf bottle/*.tar.gz
+          export PATH="${PWD}/rv-ruby/bin:${PATH}"
+          ruby --version --yjit
+          ruby -r debug -r bigdecimal -r json -r yaml -r reline -e "true"

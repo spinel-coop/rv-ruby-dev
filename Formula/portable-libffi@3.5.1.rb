@@ -1,6 +1,6 @@
 require File.expand_path("../Abstract/portable-formula", __dir__)
 
-class PortableLibffi < PortableFormula
+class PortableLibffiAT351 < PortableFormula
   desc "Portable Foreign Function Interface library"
   homepage "https://sourceware.org/libffi/"
   url "https://github.com/libffi/libffi/releases/download/v3.5.1/libffi-3.5.1.tar.gz"
@@ -12,8 +12,7 @@ class PortableLibffi < PortableFormula
   end
 
   def install
-    system "./configure", *portable_configure_args,
-                          *std_configure_args,
+    system "./configure", *std_configure_args,
                           "--enable-static",
                           "--disable-shared",
                           "--disable-docs"

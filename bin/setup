@@ -1,0 +1,8 @@
+#!/bin/bash
+set -euo pipefail
+set -x
+
+DIRNAME="$(basename "$(pwd)")"
+brew tap "spinel-coop/$DIRNAME" .
+rm -rf "$(brew --prefix)/Library/Taps/spinel-coop/homebrew-$DIRNAME"
+ln -sf "$(pwd)" "$(brew --prefix)/Library/Taps/spinel-coop/homebrew-$DIRNAME"
