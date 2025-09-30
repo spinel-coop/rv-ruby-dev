@@ -3,11 +3,11 @@
 module PortableFormulaMixin
   if OS.mac?
     if Hardware::CPU.arm?
-      TARGET_MACOS = :big_sur
-      TARGET_DARWIN_VERSION = Version.new("20.1.0").freeze
+      TARGET_MACOS = :sonoma
+      TARGET_DARWIN_VERSION = Version.new("23.6.0").freeze
     else
-      TARGET_MACOS = :el_capitan
-      TARGET_DARWIN_VERSION = Version.new("15.0.0").freeze
+      TARGET_MACOS = :ventura
+      TARGET_DARWIN_VERSION = Version.new("22.6.0").freeze
     end
 
     CROSS_COMPILING = OS.kernel_version.major != TARGET_DARWIN_VERSION.major
