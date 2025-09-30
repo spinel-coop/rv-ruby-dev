@@ -212,5 +212,7 @@ class RvRuby33 < Formula
     system testpath/"bin/gem", "install", "byebug"
     assert_match "byebug",
       shell_output("#{testpath}/bin/byebug --version")
+
+    super
   end
 end
