@@ -9,25 +9,6 @@ module PortableFormulaMixin
       TARGET_MACOS = :ventura
       TARGET_DARWIN_VERSION = Version.new("22.6.0").freeze
     end
-
-    CROSS_COMPILING = OS.kernel_version.major != TARGET_DARWIN_VERSION.major
-  end
-
-  def portable_configure_args
-    # Allow cross-compile between Darwin versions (used by our fake El Capitan on High Sierra setup)
-    if OS.mac? && CROSS_COMPILING
-      cpu = if Hardware::CPU.arm?
-        "aarch64"
-      else
-        "x86_64"
-      end
-      %W[
-        --build=#{cpu}-apple-darwin#{OS.kernel_version}
-        --host=#{cpu}-apple-darwin#{TARGET_DARWIN_VERSION}
-      ]
-    else
-      []
-    end
   end
 
   def install

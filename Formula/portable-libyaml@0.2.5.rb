@@ -12,8 +12,7 @@ class PortableLibyamlAT025 < PortableFormula
   end
 
   def install
-    system "./configure", *portable_configure_args,
-                          "--disable-dependency-tracking",
+    system "./configure", "--disable-dependency-tracking",
                           "--prefix=#{prefix}",
                           "--enable-static",
                           "--disable-shared"

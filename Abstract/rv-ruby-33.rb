@@ -90,7 +90,7 @@ class RvRuby33 < Formula
     libyaml = Formula[dep_names.find{|d| d.start_with?("portable-libyaml") }]
     openssl = Formula[dep_names.find{|d| d.start_with?("portable-openssl") }]
 
-    args = portable_configure_args + %W[
+    args = %W[
       --prefix=#{prefix}
       --enable-load-relative
       --with-static-linked-ext
