@@ -101,10 +101,13 @@ class RvRuby33 < Formula
       --disable-dependency-tracking
     ]
 
-    if ENV.key?("HOMEBREW_BASERUBY") && %x[#{ENV["HOMEBREW_BASERUBY"]} -v] =~ /#{Regexp.escape(version)}/
-      args += %W[--with-baseruby=#{ENV["HOMEBREW_BASERUBY"]}]
+    baseruby = ENV["HOMEBREW_BASERUBY"]
+    baseruby_version = baseruby && %x[#{baseruby} -v]
+    if baseruby && baseruby_version =~ /#{Regexp.escape(version)}/
+      args += %W[--with-baseruby=#{baseruby}]
     else
-      odie "HOMEBREW_BASERUBY must contain the path to a ruby #{version} executable"
+      odie "HOMEBREW_BASERUBY must contain the path to a ruby #{version} executable, " \
+        "but instead contains #{baseruby}, with version #{baseruby_version}"
     end
 
     args += %W[--enable-yjit] unless build.without? "yjit"
