@@ -90,13 +90,15 @@ class RvRuby34 < Formula
       --prefix=#{prefix}
       --enable-load-relative
       --with-static-linked-ext
-      --with-baseruby=#{RbConfig.ruby}
       --with-out-ext=win32,win32ole
       --without-gmp
       --disable-install-doc
       --disable-install-rdoc
       --disable-dependency-tracking
     ]
+
+    baseruby = ENV.key?("HOMEBREW_BASERUBY") ? ENV["HOMEBREW_BASERUBY"] : RbConfig.ruby
+    args += %W[--with-baseruby=#{baseruby}]
 
     args += %W[--enable-yjit] unless build.without? "yjit"
 
@@ -207,6 +209,7 @@ class RvRuby34 < Formula
     system testpath/"bin/gem", "install", "byebug"
     assert_match "byebug",
       shell_output("#{testpath}/bin/byebug --version")
+
     super
   end
 end
