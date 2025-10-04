@@ -81,11 +81,12 @@ jobs:
           HOMEBREW_GITHUB_PACKAGES_TOKEN: ${{ github.token }}
         run: brew rv-upload --debug --root-url="https://ghcr.io/v2/${GITHUB_REPOSITORY,,}"
 
-      - name: Push tag
+      - name: Create tag if needed
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
-          gh release create "${TAG}" --notes "rv ruby ${TAG}" --target "$(git rev-parse --verify HEAD)" --title "${TAG}"
+          gh release view "${TAG}" || \
+            gh release create "${TAG}" --notes "rv ruby ${TAG}" --target "$(git rev-parse --verify HEAD)" --title "${TAG}"
 
       - name: Upload to GitHub Releases
         working-directory: rubies
