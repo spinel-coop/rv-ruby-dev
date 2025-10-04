@@ -55,20 +55,20 @@ jobs:
           if [[ -n "${{ steps.setup-ruby.outputs.ruby-prefix }}" ]]; then
             export HOMEBREW_BASERUBY="${{ steps.setup-ruby.outputs.ruby-prefix }}/bin/ruby"
           fi
-          mkdir -p bottle/
-          cd bottle
+          mkdir -p rubies/
+          cd rubies
           brew rv-package --verbose --with-yjit rv-ruby@${{ inputs.version }}
 
       - name: Upload rv Ruby
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: rv-ruby@${{ inputs.version }}_${{ matrix.runner }}
-          path: ${{github.workspace}}/bottle
+          path: ${{github.workspace}}/rubies
 
       - name: Test Portable Ruby
         run: |
           mkdir -p rv-ruby/
-          tar --strip-components 2 -C rv-ruby -xf bottle/*.tar.gz
+          tar --strip-components 2 -C rv-ruby -xf rubies/*.tar.gz
           export PATH="${PWD}/rv-ruby/bin:${PATH}"
           ruby --version --yjit
           ruby -r debug -r bigdecimal -r json -r yaml -r reline -e "true"
