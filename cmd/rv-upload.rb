@@ -8,7 +8,7 @@ require "github_releases"
 require "extend/hash/deep_merge"
 
 module Homebrew
-  module DevCmd
+  module Cmd
     class RvUpload < AbstractCommand
       cmd_args do
         description <<~EOS
