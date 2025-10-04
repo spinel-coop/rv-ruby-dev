@@ -77,14 +77,14 @@ module Homebrew
             ]
             safe_system HOMEBREW_BREW_FILE, "bottle", *verbose, *bottle_args, name
 
-            update_bottle_names name, args.without_yjit?
+            rename_bottles name, args.without_yjit?
           rescue => e
             ofail e
           end
         end
       end
 
-      def update_bottle_names(name, disable_yjit)
+      def rename_bottles(name, disable_yjit)
         yjit_tag = disable_yjit ? ".no_yjit." : "."
 
         Dir.glob("*.bottle.json").each do |j|
@@ -92,7 +92,9 @@ module Homebrew
           json.gsub! "#{name}--", "ruby-"
           json.gsub!(".bottle.", yjit_tag)
           json.gsub! ERB::Util.url_encode(name), "ruby"
-          File.write j, json
+          hash = JSON.parse(json)
+          hash[hash.keys.first]["formula"]["name"] = "ruby"
+          File.write j, JSON.generate(hash)
         end
 
         Dir.glob("#{name}*").each do |f|
