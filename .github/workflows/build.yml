@@ -26,7 +26,7 @@ jobs:
         runner:
           # - macos-13 # intel
           - macos-14 # arm
-          # - ubuntu-22.04
+          - ubuntu-22.04
           # - ubuntu-22.04-arm
       fail-fast: false
     runs-on: ${{ matrix.runner }}
