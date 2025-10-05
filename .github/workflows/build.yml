@@ -38,7 +38,7 @@ jobs:
         id: setup-ruby
         with:
           ruby-version: ${{ inputs.version }}
-        if: startsWith(matrix.runner, 'macos') && !startsWith(inputs.version, '3.4')
+        if: startsWith(matrix.runner, 'macos')
 
       - name: Install Homebrew
         run: |
