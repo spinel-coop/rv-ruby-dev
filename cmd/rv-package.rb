@@ -7,12 +7,12 @@ require "dependency"
 
 module Homebrew
   module Cmd
-    class PortablePackageCmd < AbstractCommand
+    class RvPackageCmd < AbstractCommand
       cmd_args do
         usage_banner <<~EOS
-          `portable-package` <formulae>
+          `rv-package` <formulae>
 
-          Build and package portable formulae.
+          Build and package rv formulae.
         EOS
         switch "--no-uninstall-deps",
                description: "Don't uninstall all dependencies of portable formulae before testing."
@@ -43,7 +43,7 @@ module Homebrew
         args.named.each do |name|
           begin
             # On Linux, install glibc and linux-headers from bottles and don't install their build dependencies.
-            bottled_dep_allowlist = /\A(?:glibc@|linux-headers@|rustup)/
+            bottled_dep_allowlist = /\A(?:glibc@|linux-headers@|ruby@|rustup)/
             deps = Dependency.expand(Formula[name], cache_key: "rv-package-#{name}") do |_dependent, dep|
               Dependency.prune if dep.test? || dep.optional?
               Dependency.prune if dep.name == "rustup" && args.without_yjit?
@@ -77,22 +77,27 @@ module Homebrew
             ]
             safe_system HOMEBREW_BREW_FILE, "bottle", *verbose, *bottle_args, name
 
-            update_bottle_names name, args.without_yjit?
+            rename_bottles name, args.without_yjit?
           rescue => e
             ofail e
           end
         end
       end
 
-      def update_bottle_names(name, disable_yjit)
+      def rename_bottles(name, disable_yjit)
+        yjit_tag = disable_yjit ? ".no_yjit." : "."
+
         Dir.glob("*.bottle.json").each do |j|
           json = File.read j
           json.gsub! "#{name}--", "ruby-"
+          json.gsub!(".bottle.", yjit_tag)
           json.gsub! ERB::Util.url_encode(name), "ruby"
-          File.write j, json
+          hash = JSON.parse(json)
+          hash[hash.keys.first]["formula"]["name"] = name.gsub(/^rv-/, "")
+          hash[hash.keys.first]["formula"]["pkg_version"] = Date.today.to_s.tr("-", "")
+          File.write j, JSON.generate(hash)
         end
 
-        yjit_tag = disable_yjit ? ".no_yjit." : "."
         Dir.glob("#{name}*").each do |f|
           r = f.gsub("#{name}--", "ruby-")
           r = r.gsub(".bottle.", yjit_tag)

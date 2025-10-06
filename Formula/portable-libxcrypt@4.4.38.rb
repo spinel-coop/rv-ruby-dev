@@ -12,8 +12,7 @@ class PortableLibxcryptAT4438 < PortableFormula
   end
 
   def install
-    system "./configure", *portable_configure_args,
-                          *std_configure_args,
+    system "./configure", *std_configure_args,
                           "--enable-static",
                           "--disable-shared",
                           "--disable-obsolete-api",

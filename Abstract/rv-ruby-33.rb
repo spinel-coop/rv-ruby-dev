@@ -1,6 +1,11 @@
 require File.expand_path("../Abstract/portable-formula", __dir__)
 
-class RvRuby34 < Formula
+# on macOS, Ruby 3.3 builds require a BASERUBY already available on the system
+# with version 3.3.x. I wasn't able to get the Homebrew formula ruby@3.3 working
+# for this case, so we are stuck relying on ruby/setup-ruby for now.  If you're
+# trying to build outside GHA, you probably need to set HOMEBREW_BASERUBY to the
+# absolute path of a ruby 3.3 binary for this to work.
+class RvRuby33 < Formula
   def self.inherited(subclass)
     subclass.class_eval do
       super
@@ -53,8 +58,8 @@ class RvRuby34 < Formula
       end
 
       resource "bootsnap" do
-        url "https://rubygems.org/downloads/bootsnap-1.18.6.gem"
-        sha256 "0ae2393c1e911e38be0f24e9173e7be570c3650128251bf06240046f84a07d00"
+        url "https://rubygems.org/downloads/bootsnap-1.18.4.gem"
+        sha256 "ac4c42af397f7ee15521820198daeff545e4c360d2772c601fbdc2c07d92af55"
 
         livecheck do
           url "https://rubygems.org/api/v1/versions/bootsnap.json"
@@ -62,14 +67,13 @@ class RvRuby34 < Formula
             json.first["number"]
           end
         end
-
       end
 
       prepend PortableFormulaMixin
     end
   end
 
-  def install
+ def install
     # provide rustc for YJIT compilation
     system "rustup install 1.58 --profile minimal" unless build.without? "yjit"
 
@@ -97,13 +101,15 @@ class RvRuby34 < Formula
       --disable-dependency-tracking
     ]
 
-    baseruby = ENV["HOMEBREW_BASERUBY"] || RbConfig.ruby
-    baseruby_version = baseruby && %x[#{baseruby} -v]
-    if baseruby && baseruby_version =~ /#{Regexp.escape(version)}/
-      args += %W[--with-baseruby=#{baseruby}]
-    else
-      odie "HOMEBREW_BASERUBY must contain the path to a ruby #{version} executable, " \
-        "but instead contains #{baseruby}, with version #{baseruby_version}"
+    if OS.mac?
+      baseruby = ENV["HOMEBREW_BASERUBY"]
+      baseruby_version = baseruby && %x[#{baseruby} -v]
+      if baseruby && baseruby_version =~ /#{Regexp.escape(version)}/
+        args += %W[--with-baseruby=#{baseruby}]
+      else
+        odie "HOMEBREW_BASERUBY must contain the path to a ruby #{version} executable, " \
+          "but instead contains #{baseruby}, with version #{baseruby_version}"
+      end
     end
 
     args += %W[--enable-yjit] unless build.without? "yjit"
@@ -196,7 +202,7 @@ class RvRuby34 < Formula
       shell_output("#{ruby} -rzlib -e 'puts Zlib.crc32(\"test\")'").chomp
     assert_equal " \t\n`><=;|&{(",
       shell_output("#{ruby} -rreadline -e 'puts Readline.basic_word_break_characters'").chomp
-    assert_equal '{"a" => "b"}',
+    assert_equal '{"a"=>"b"}',
       shell_output("#{ruby} -ryaml -e 'puts YAML.load(\"a: b\")'").chomp
     assert_equal "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       shell_output("#{ruby} -ropenssl -e 'puts OpenSSL::Digest::SHA256.hexdigest(\"\")'").chomp
