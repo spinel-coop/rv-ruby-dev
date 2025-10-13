@@ -1,10 +1,10 @@
 require File.expand_path("../Abstract/portable-formula", __dir__)
 
-# on macOS, Ruby 3.3 builds require a BASERUBY already available on the system
-# with version 3.3.x. I wasn't able to get the Homebrew formula ruby@3.3 working
+# on macOS, Ruby builds require a BASERUBY already available on the system with
+# the same version. I wasn't able to get the Homebrew formula for ruby working
 # for this case, so we are stuck relying on ruby/setup-ruby for now.  If you're
 # trying to build outside GHA, you probably need to set HOMEBREW_BASERUBY to the
-# absolute path of a ruby 3.3 binary for this to work.
+# absolute path of a ruby binary for this to work.
 class RvRuby32 < Formula
   def self.inherited(subclass)
     subclass.class_eval do
