@@ -5,7 +5,7 @@ require File.expand_path("../Abstract/portable-formula", __dir__)
 # for this case, so we are stuck relying on ruby/setup-ruby for now.  If you're
 # trying to build outside GHA, you probably need to set HOMEBREW_BASERUBY to the
 # absolute path of a ruby binary for this to work.
-class RvRuby33 < Formula
+class RvRuby32 < Formula
   def self.inherited(subclass)
     subclass.class_eval do
       super
@@ -17,7 +17,7 @@ class RvRuby33 < Formula
       # This regex restricts matching to versions other than X.Y.0.
       livecheck do
         formula "ruby"
-        regex(/href=.*?ruby[._-]v?(3.3.(?:(?!0)\d+)(?:\.\d+)*)\.t/i)
+        regex(/href=.*?ruby[._-]v?(3.2.(?:(?!0)\d+)(?:\.\d+)*)\.t/i)
       end
 
       keg_only "portable formulae are keg-only"
@@ -96,10 +96,14 @@ class RvRuby33 < Formula
       --with-static-linked-ext
       --with-out-ext=win32,win32ole
       --without-gmp
+      --enable-libedit
       --disable-install-doc
       --disable-install-rdoc
       --disable-dependency-tracking
     ]
+
+    # Correct MJIT_CC to not use superenv shim
+    args << "MJIT_CC=/usr/bin/#{DevelopmentTools.default_compiler}"
 
     if OS.mac?
       baseruby = ENV["HOMEBREW_BASERUBY"]
@@ -200,7 +204,7 @@ class RvRuby33 < Formula
     assert_equal ruby.to_s, shell_output("#{ruby} -e 'puts RbConfig.ruby'").chomp
     assert_equal "3632233996",
       shell_output("#{ruby} -rzlib -e 'puts Zlib.crc32(\"test\")'").chomp
-    assert_equal " \t\n`><=;|&{(",
+    assert_equal " \t\n\"\\'`@$><=;|&{(",
       shell_output("#{ruby} -rreadline -e 'puts Readline.basic_word_break_characters'").chomp
     assert_equal '{"a"=>"b"}',
       shell_output("#{ruby} -ryaml -e 'puts YAML.load(\"a: b\")'").chomp

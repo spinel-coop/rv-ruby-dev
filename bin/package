@@ -1,0 +1,14 @@
+#!/bin/bash
+
+NUMBER="$1"
+
+set -v
+
+export HOMEBREW_BASERUBY="$HOME/.rubies/ruby-${NUMBER}/bin/ruby"
+export HOMEBREW_RUSTUP_HOME="$HOME/.rustup"
+
+brew rv-package "rv-ruby@${NUMBER}" \
+  --no-uninstall-deps \
+  --debug \
+  --verbose \
+  --with-yjit
