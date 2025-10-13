@@ -17,7 +17,7 @@ class RvRuby33 < Formula
       # This regex restricts matching to versions other than X.Y.0.
       livecheck do
         formula "ruby"
-        regex(/href=.*?ruby[._-]v?(\d+\.\d+\.(?:(?!0)\d+)(?:\.\d+)*)\.t/i)
+        regex(/href=.*?ruby[._-]v?(3.3.(?:(?!0)\d+)(?:\.\d+)*)\.t/i)
       end
 
       keg_only "portable formulae are keg-only"
