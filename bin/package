@@ -7,6 +7,12 @@ set -v
 export HOMEBREW_BASERUBY="$HOME/.rubies/ruby-${NUMBER}/bin/ruby"
 export HOMEBREW_RUSTUP_HOME="$HOME/.rustup"
 
+if [[ ! -f "$HOMEBREW_BASERUBY" ]]; then
+  brew install ruby-install
+  (which apt && sudo apt update) || true
+  ruby-install "$NUMBER"
+fi
+
 brew rv-package "rv-ruby@${NUMBER}" \
   --no-uninstall-deps \
   --debug \
