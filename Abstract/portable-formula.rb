@@ -63,12 +63,7 @@ class PortableFormula < Formula
       keg_only "portable formulae are keg-only"
 
       on_linux do
-        on_intel do
-          depends_on "glibc@2.13" => :build
-        end
-        on_arm do
-          depends_on "glibc@2.17" => :build
-        end
+        depends_on "glibc@2.17" => :build
         depends_on "linux-headers@4.4" => :build
       end
 
