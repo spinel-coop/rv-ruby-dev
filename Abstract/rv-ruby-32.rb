@@ -107,10 +107,14 @@ class RvRuby32 < Formula
     # Correct MJIT_CC to not use superenv shim
     args << "MJIT_CC=/usr/bin/#{DevelopmentTools.default_compiler}"
 
-    if OS.mac?
+    if ENV.key?("HOMEBREW_BASERUBY")
       baseruby = ENV["HOMEBREW_BASERUBY"]
+      if !File.exist?(baseruby)
+        odie "HOMEBREW_BASERUBY must contain the path to a ruby #{version} executable"
+      end
+
       baseruby_version = baseruby && %x[#{baseruby} -v]
-      if baseruby && baseruby_version =~ /#{Regexp.escape(version)}/
+      if baseruby_version =~ /#{Regexp.escape(version)}/
         args += %W[--with-baseruby=#{baseruby}]
       else
         odie "HOMEBREW_BASERUBY must contain the path to a ruby #{version} executable, " \
