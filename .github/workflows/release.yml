@@ -24,6 +24,7 @@ jobs:
         run: |
           cd Formula
           list=$(ls rv-ruby* | cut -d '@' -f 2 | jq --raw-input | jq --slurp --compact-output 'map(. |= .[:-3])')
+          list='["3.2.9"]'
           echo versions=$list >> "$GITHUB_OUTPUT"
           echo "date=$(date +%Y%m%d)" >> "$GITHUB_OUTPUT"
 
