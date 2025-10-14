@@ -96,7 +96,6 @@ class RvRuby32 < Formula
       --with-static-linked-ext
       --with-out-ext=win32,win32ole
       --without-gmp
-      --enable-libedit
       --disable-install-doc
       --disable-install-rdoc
       --disable-dependency-tracking
@@ -106,6 +105,8 @@ class RvRuby32 < Formula
     args << "MJIT_CC=/usr/bin/#{DevelopmentTools.default_compiler}"
 
     if OS.mac?
+      args += %W[--enable-libedit]
+
       baseruby = ENV["HOMEBREW_BASERUBY"]
       baseruby_version = baseruby && %x[#{baseruby} -v]
       if baseruby && baseruby_version =~ /#{Regexp.escape(version)}/
