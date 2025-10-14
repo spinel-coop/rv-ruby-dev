@@ -30,6 +30,7 @@ class RvRuby32 < Formula
       depends_on "portable-openssl@3.5.1" => :build
 
       on_linux do
+        depends_on "portable-libedit" => :build
         depends_on "portable-libffi@3.5.1" => :build
         depends_on "portable-libxcrypt@4.4.38" => :build
         depends_on "portable-zlib@1.3.1" => :build
@@ -74,6 +75,8 @@ class RvRuby32 < Formula
   end
 
  def install
+    # share RUSTUP_HOME across installs if provided
+    ENV["RUSTUP_HOME"] = ENV["HOMEBREW_RUSTUP_HOME"] if ENV.key?("HOMEBREW_RUSTUP_HOME")
     # provide rustc for YJIT compilation
     system "rustup install 1.58 --profile minimal" unless build.without? "yjit"
 
@@ -96,7 +99,6 @@ class RvRuby32 < Formula
       --with-static-linked-ext
       --with-out-ext=win32,win32ole
       --without-gmp
-      --enable-libedit
       --disable-install-doc
       --disable-install-rdoc
       --disable-dependency-tracking
@@ -105,10 +107,14 @@ class RvRuby32 < Formula
     # Correct MJIT_CC to not use superenv shim
     args << "MJIT_CC=/usr/bin/#{DevelopmentTools.default_compiler}"
 
-    if OS.mac?
+    if ENV.key?("HOMEBREW_BASERUBY")
       baseruby = ENV["HOMEBREW_BASERUBY"]
+      if !File.exist?(baseruby)
+        odie "HOMEBREW_BASERUBY must contain the path to a ruby #{version} executable"
+      end
+
       baseruby_version = baseruby && %x[#{baseruby} -v]
-      if baseruby && baseruby_version =~ /#{Regexp.escape(version)}/
+      if baseruby_version =~ /#{Regexp.escape(version)}/
         args += %W[--with-baseruby=#{baseruby}]
       else
         odie "HOMEBREW_BASERUBY must contain the path to a ruby #{version} executable, " \
@@ -123,15 +129,21 @@ class RvRuby32 < Formula
       --with-libyaml-dir=#{libyaml.opt_prefix}
     ]
 
+    if OS.mac?
+      args += %W[--enable-libedit]
+    end
+
     if OS.linux?
       libffi = Formula[dep_names.find{|d| d.start_with?("portable-libffi") }]
       libxcrypt = Formula[dep_names.find{|d| d.start_with?("portable-libxcrypt") }]
       zlib = Formula[dep_names.find{|d| d.start_with?("portable-zlib") }]
+      libedit = Formula[dep_names.find{|d| d.start_with?("portable-libedit") }]
 
       ENV["XCFLAGS"] = "-I#{libxcrypt.opt_include}"
       ENV["XLDFLAGS"] = "-L#{libxcrypt.opt_lib}"
 
       args += %W[
+        --enable-libedit=#{libedit.opt_prefix}
         --with-libffi-dir=#{libffi.opt_prefix}
         --with-zlib-dir=#{zlib.opt_prefix}
       ]

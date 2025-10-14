@@ -5,5 +5,5 @@ set -x
 DIRNAME="$(basename "$(pwd)")"
 brew untap "spinel-coop/$DIRNAME" --force || true
 brew tap "spinel-coop/$DIRNAME" .
-rm -rf "$(brew --prefix)/Library/Taps/spinel-coop/homebrew-$DIRNAME"
-ln -sf "$(pwd)" "$(brew --prefix)/Library/Taps/spinel-coop/homebrew-$DIRNAME"
+rm -rf "$(brew --repo)/Library/Taps/spinel-coop/homebrew-$DIRNAME"
+ln -sf "$(pwd)" "$(brew --repo)/Library/Taps/spinel-coop/homebrew-$DIRNAME"
