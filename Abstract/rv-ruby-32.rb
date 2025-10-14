@@ -30,6 +30,7 @@ class RvRuby32 < Formula
       depends_on "portable-openssl@3.5.1" => :build
 
       on_linux do
+        depends_on "portable-libedit" => :build
         depends_on "portable-libffi@3.5.1" => :build
         depends_on "portable-libxcrypt@4.4.38" => :build
         depends_on "portable-zlib@1.3.1" => :build
@@ -105,8 +106,6 @@ class RvRuby32 < Formula
     args << "MJIT_CC=/usr/bin/#{DevelopmentTools.default_compiler}"
 
     if OS.mac?
-      args += %W[--enable-libedit]
-
       baseruby = ENV["HOMEBREW_BASERUBY"]
       baseruby_version = baseruby && %x[#{baseruby} -v]
       if baseruby && baseruby_version =~ /#{Regexp.escape(version)}/
@@ -124,15 +123,21 @@ class RvRuby32 < Formula
       --with-libyaml-dir=#{libyaml.opt_prefix}
     ]
 
+    if OS.mac?
+      args += %W[--enable-libedit]
+    end
+
     if OS.linux?
       libffi = Formula[dep_names.find{|d| d.start_with?("portable-libffi") }]
       libxcrypt = Formula[dep_names.find{|d| d.start_with?("portable-libxcrypt") }]
       zlib = Formula[dep_names.find{|d| d.start_with?("portable-zlib") }]
+      libedit = Formula[dep_names.find{|d| d.start_with?("portable-libedit") }]
 
       ENV["XCFLAGS"] = "-I#{libxcrypt.opt_include}"
       ENV["XLDFLAGS"] = "-L#{libxcrypt.opt_lib}"
 
       args += %W[
+        --enable-libedit=#{libedit.opt_prefix}
         --with-libffi-dir=#{libffi.opt_prefix}
         --with-zlib-dir=#{zlib.opt_prefix}
       ]
