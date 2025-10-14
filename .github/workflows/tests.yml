@@ -20,7 +20,7 @@ jobs:
       - name: Set up Homebrew
         uses: Homebrew/actions/setup-homebrew@main
       - run: brew test-bot --only-tap-syntax
-
+   
   # list_edited_formulas:
   # build_edited_formulas:
 
