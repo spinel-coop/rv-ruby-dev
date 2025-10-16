@@ -3,7 +3,9 @@ set -euo pipefail
 set -x
 
 DIRNAME="$(basename "$(pwd)")"
-brew untap "spinel-coop/$DIRNAME" --force || true
+if brew tap | grep -F "spinel-coop/$DIRNAME"; then
+  brew untap "spinel-coop/$DIRNAME" --force
+fi
 brew tap "spinel-coop/$DIRNAME" .
 rm -rf "$(brew --repo)/Library/Taps/spinel-coop/homebrew-$DIRNAME"
 ln -sf "$(pwd)" "$(brew --repo)/Library/Taps/spinel-coop/homebrew-$DIRNAME"
