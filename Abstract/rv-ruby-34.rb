@@ -94,7 +94,6 @@ class RvRuby34 < Formula
     args = %W[
       --prefix=#{prefix}
       --enable-load-relative
-      --with-static-linked-ext
       --with-out-ext=win32,win32ole
       --without-gmp
       --disable-install-doc
