@@ -13,6 +13,8 @@ if [[ ! -f "$HOMEBREW_BASERUBY" ]]; then
   ruby-install "$NUMBER"
 fi
 
+brew uninstall --force "rv-ruby@${NUMBER}"
+
 brew rv-package "rv-ruby@${NUMBER}" \
   --no-uninstall-deps \
   --debug \
