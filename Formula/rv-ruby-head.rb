@@ -9,4 +9,8 @@ class RvRubyHead < RvRuby34
     system "./autogen.sh"
     super
   end
+
+  def stable
+    @head
+  end
 end
