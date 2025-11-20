@@ -57,12 +57,13 @@ module Homebrew
             puts "Bottled deps: #{bottled_deps.inspect}"
             puts "Other deps: #{deps.inspect}"
 
-            safe_system HOMEBREW_BREW_FILE, "install", *verbose, *bottled_deps if bottled_deps.present?
+            safe_system HOMEBREW_BREW_FILE, "install", *verbose, *bottled_deps if bottled_deps.any?
 
             # Build bottles for all other dependencies.
-            safe_system HOMEBREW_BREW_FILE, "install", "--build-bottle", *verbose, *deps
-
+            safe_system HOMEBREW_BREW_FILE, "install", "--build-bottle", *verbose, *deps if deps.any?
+            # Build the main bottle
             safe_system HOMEBREW_BREW_FILE, "install", "--build-bottle", yjit, *verbose, name
+            # Uninstall the dependencies we linked in
             unless args.no_uninstall_deps?
               safe_system HOMEBREW_BREW_FILE, "uninstall", "--force", "--ignore-dependencies", *verbose, *deps
             end

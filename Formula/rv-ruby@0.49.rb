@@ -1,10 +1,14 @@
-class RvRubyAT049 < Formula
+require File.expand_path("../Abstract/portable-formula", __dir__)
+
+class RvRubyAT049 < PortableFormula
   desc "A working upgrade of the oldest extant ruby version"
   homepage "https://github.com/sampersand/ruby-0.49"
   version "0.49"
   url "https://github.com/sampersand/ruby-0.49/archive/refs/tags/v1.0.tar.gz"
   sha256 "88e011f60c6bb532c8e0787506a5ed518f31288bce749e1eb868febe290d83be"
   license "ruby"
+
+  option "with-yjit", "Build Ruby with YJIT"
 
   def install
     Dir.chdir("fixed") do
