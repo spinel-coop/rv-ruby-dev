@@ -6,7 +6,7 @@ class RvRubyHead < RvRuby34
   depends_on "autoconf" => :build
 
   def install
-    system "autoconf"
+    system "./autogen.sh"
     super
   end
 end
