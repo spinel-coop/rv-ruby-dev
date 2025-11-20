@@ -83,7 +83,7 @@ class RvRuby34 < Formula
     end
 
     bundled_gems = File.foreach("gems/bundled_gems").reject do |line|
-      line.blank? || line.start_with?("#")
+      line.blank? || line.start_with?("#") || line =~ /win32/
     end
     resources.each do |resource|
       resource.stage "gems"
