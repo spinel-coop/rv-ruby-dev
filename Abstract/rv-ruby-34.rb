@@ -105,7 +105,7 @@ class RvRuby34 < Formula
 
     baseruby = ENV["HOMEBREW_BASERUBY"] || RbConfig.ruby
     baseruby_version = baseruby && %x[#{baseruby} -v]
-    baseruby_allowed = version.starts_with?("HEAD") || baseruby_version =~ /#{Regexp.escape(version)}/
+    baseruby_allowed = version.to_s =~ /^HEAD/ || baseruby_version =~ /#{Regexp.escape(version)}/
     if baseruby && baseruby_allowed
       args += %W[--with-baseruby=#{baseruby}]
     else
