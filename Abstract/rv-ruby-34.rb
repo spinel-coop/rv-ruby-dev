@@ -75,6 +75,8 @@ class RvRuby34 < Formula
   end
 
   def install
+    # share RUSTUP_HOME across installs if provided
+    ENV["RUSTUP_HOME"] = ENV["HOMEBREW_RUSTUP_HOME"] if ENV.key?("HOMEBREW_RUSTUP_HOME")
     # provide rustc for YJIT compilation
     system "rustup install 1.58 --profile minimal" unless build.without? "yjit"
 
