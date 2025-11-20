@@ -33,7 +33,8 @@ module Homebrew
         verbose << "--verbose" if args.verbose?
         verbose << "--debug" if args.debug?
 
-        yjit = args.without_yjit? ? "--without-yjit" : "--with-yjit"
+        flags = []
+        flags << (args.without_yjit? ? "--without-yjit" : "--with-yjit")
 
         # If test-bot cleanup is performed and auto-updates are disabled, this might not already be installed.
         unless DevelopmentTools.ca_file_handles_most_https_certificates?
@@ -41,6 +42,8 @@ module Homebrew
         end
 
         args.named.each do |name|
+          flags << "--HEAD" if name =~ /-head$/
+
           begin
             # On Linux, install glibc and linux-headers from bottles and don't install their build dependencies.
             bottled_dep_allowlist = /\A(?:glibc@|linux-headers@|ruby@|rustup)/
@@ -62,7 +65,7 @@ module Homebrew
             # Build bottles for all other dependencies.
             safe_system HOMEBREW_BREW_FILE, "install", "--build-bottle", *verbose, *deps if deps.any?
             # Build the main bottle
-            safe_system HOMEBREW_BREW_FILE, "install", "--build-bottle", yjit, *verbose, name
+            safe_system HOMEBREW_BREW_FILE, "install", "--build-bottle", *flags, *verbose, name
             # Uninstall the dependencies we linked in
             unless args.no_uninstall_deps?
               safe_system HOMEBREW_BREW_FILE, "uninstall", "--force", "--ignore-dependencies", *verbose, *deps
