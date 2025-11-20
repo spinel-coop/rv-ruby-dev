@@ -154,7 +154,8 @@ class RvRuby34 < Formula
 
     # Add a helper load path file so bundled gems can be easily used (used by brew's standalone/init.rb)
     system "make", "ruby.pc"
-    arch = Utils.safe_popen_read("pkg-config", "--variable=arch", "./ruby-#{version.major_minor}.pc").chomp
+    pc_file = Dir.glob("ruby-*.pc").first
+    arch = Utils.safe_popen_read("pkg-config", "--variable=arch", "./#{pc_file}").chomp
     mkdir_p "lib/#{arch}"
     File.open("lib/#{arch}/portable_ruby_gems.rb", "w") do |file|
       (Dir["extensions/*/*/*", base: ".bundle"] + Dir["gems/*/lib", base: ".bundle"]).each do |require_path|
