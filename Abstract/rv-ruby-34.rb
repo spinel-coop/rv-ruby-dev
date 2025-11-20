@@ -198,7 +198,9 @@ class RvRuby34 < Formula
     cp_r Dir["#{prefix}/*"], testpath
     ENV["PATH"] = "/usr/bin:/bin"
     ruby = (testpath/"bin/ruby").realpath
-    assert_equal version.to_s.split("-").first, shell_output("#{ruby} -e 'puts RUBY_VERSION'").chomp
+    unless version.to_s =~ /head/i
+      assert_equal version.to_s.split("-").first, shell_output("#{ruby} -e 'puts RUBY_VERSION'").chomp
+    end
     assert_equal ruby.to_s, shell_output("#{ruby} -e 'puts RbConfig.ruby'").chomp
     assert_equal "3632233996",
       shell_output("#{ruby} -rzlib -e 'puts Zlib.crc32(\"test\")'").chomp
