@@ -42,7 +42,7 @@ module Homebrew
         end
 
         args.named.each do |name|
-          flags << "--HEAD" if name =~ /-head$/
+          flags << "--HEAD" unless name.include?("@")
 
           begin
             # On Linux, install glibc and linux-headers from bottles and don't install their build dependencies.
