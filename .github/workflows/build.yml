@@ -36,6 +36,7 @@ jobs:
       # Static gem extensions typically require the same Ruby version available already
       - uses: ruby/setup-ruby@v1
         id: setup-ruby
+        if: ${{ inputs.version != '0.49' }}
         with:
           ruby-version: ${{ inputs.version }}
 
