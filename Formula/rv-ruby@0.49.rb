@@ -1,6 +1,8 @@
 require File.expand_path("../Abstract/portable-formula", __dir__)
 
-class RvRubyAT049 < PortableFormula
+class RvRubyAT049 < Formula
+  prepend PortableFormulaMixin
+
   desc "A working upgrade of the oldest extant ruby version"
   homepage "https://github.com/sampersand/ruby-0.49"
   version "0.49"
