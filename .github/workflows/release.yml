@@ -23,7 +23,7 @@ jobs:
       - id: setup
         run: |
           cd Formula
-          list=$(ls rv-ruby* | cut -d '@' -f 2 | jq --raw-input | jq --slurp --compact-output 'map(. |= .[:-3])')
+          list=$(ls rv-ruby* | jq --raw-input | jq --slurp --compact-output 'map(. |= .[:-3])')
           echo versions=$list >> "$GITHUB_OUTPUT"
           echo "date=$(date +%Y%m%d)" >> "$GITHUB_OUTPUT"
 
