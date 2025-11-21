@@ -27,7 +27,7 @@ jobs:
       - id: setup
         run: |
           if [[ -n "${{ inputs.formula }}" ]]; then
-            list=["${{ inputs.formula }}"]
+            list="[\"${{ inputs.formula }}\"]"
           else
             cd Formula
             list=$(ls rv-ruby* | jq --raw-input | jq --slurp --compact-output 'map(. |= .[:-3])')
