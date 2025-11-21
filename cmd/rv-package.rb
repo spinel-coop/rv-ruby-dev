@@ -97,7 +97,9 @@ module Homebrew
           json.gsub!(".bottle.", yjit_tag)
           json.gsub! ERB::Util.url_encode(name), "ruby"
           hash = JSON.parse(json)
-          hash[hash.keys.first]["formula"]["name"] = name.gsub(/^rv-/, "")
+          bottle_name = name.gsub(/^rv-/, "")
+          bottle_name << "@head" unless bottle_name.include?("@")
+          hash[hash.keys.first]["formula"]["name"] = bottle_name
           hash[hash.keys.first]["formula"]["pkg_version"] = Date.today.to_s.tr("-", "")
           File.write j, JSON.generate(hash)
         end
