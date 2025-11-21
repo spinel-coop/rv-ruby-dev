@@ -18,7 +18,7 @@ jobs:
   setup:
     runs-on: ubuntu-latest
     outputs:
-      versions: ${{ steps.setup.outputs.versions }}
+      formulas: ${{ steps.setup.outputs.formulas }}
       date: ${{ steps.setup.outputs.date }}
     steps:
       - uses: actions/checkout@main
@@ -32,7 +32,7 @@ jobs:
             cd Formula
             list=$(ls rv-ruby* | jq --raw-input | jq --slurp --compact-output 'map(. |= .[:-3])')
           fi
-          echo versions=$list >> "$GITHUB_OUTPUT"
+          echo formulas=$list >> "$GITHUB_OUTPUT"
           echo "date=$(date +%Y%m%d)" >> "$GITHUB_OUTPUT"
 
   build:
@@ -40,10 +40,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        version: ${{ fromJSON(needs.setup.outputs.versions) }}
+        formula: ${{ fromJSON(needs.setup.outputs.formulas) }}
     uses: ./.github/workflows/build.yml
     with:
-      version: ${{ matrix.version }}
+      formula: ${{ matrix.formula }}
 
   release:
     needs: [setup, build]
