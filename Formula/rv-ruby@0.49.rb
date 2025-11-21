@@ -12,7 +12,7 @@ class RvRubyAT049 < PortableFormula
 
   def install
     Dir.chdir("fixed") do
-      system "./configure", "--disable-silent-rules", *std_configure_args
+      system "./configure", *std_configure_args
       system "make"
       system "mkdir", "-p", bin
       system "make install"
