@@ -2,7 +2,7 @@
 
 PLATFORM=${1:-arm64}
 
-if docker ps --all | grep rv-ubuntu > /dev/null; then
+if docker ps --all | grep "rv-ubuntu-$PLATFORM" > /dev/null; then
   set -v
   docker start -a "rv-ubuntu-$PLATFORM"
 else
