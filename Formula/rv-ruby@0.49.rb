@@ -10,6 +10,8 @@ class RvRubyAT049 < PortableFormula
 
   option "with-yjit", "Build Ruby with YJIT"
 
+  depends_on "bison" => :build
+
   def install
     Dir.chdir("fixed") do
       system "./configure", *std_configure_args
