@@ -2,6 +2,10 @@ name: Release
 
 on:
   workflow_dispatch:
+    inputs:
+      formula:
+        required: false
+        type: string
 
 env:
   HOMEBREW_DEVELOPER: 1
@@ -22,8 +26,12 @@ jobs:
       - run: date +%Y%m%d
       - id: setup
         run: |
-          cd Formula
-          list=$(ls rv-ruby* | jq --raw-input | jq --slurp --compact-output 'map(. |= .[:-3])')
+          if [[ -n "${{ inputs.formula }}" ]]; then
+            list=["${{ inputs.formula }}"]
+          else
+            cd Formula
+            list=$(ls rv-ruby* | jq --raw-input | jq --slurp --compact-output 'map(. |= .[:-3])')
+          fi
           echo versions=$list >> "$GITHUB_OUTPUT"
           echo "date=$(date +%Y%m%d)" >> "$GITHUB_OUTPUT"
 
