@@ -24,8 +24,8 @@ jobs:
     strategy:
       matrix:
         runner:
-          - macos-14-large # intel
-          - macos-14-xlarge # arm
+          - macos-15-intel # intel
+          - macos-14 # arm
           - ubuntu-22.04
           - ubuntu-22.04-arm
       fail-fast: false
