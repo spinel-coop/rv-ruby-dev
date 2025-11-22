@@ -10,7 +10,7 @@ class RvRubyAT049 < Formula
   sha256 "88e011f60c6bb532c8e0787506a5ed518f31288bce749e1eb868febe290d83be"
   license "ruby"
 
-  option "with-yjit", "Build Ruby with YJIT"
+  option "with-yjit", "Build Ruby with YJIT" # no-op for compatibility with other formulas
 
   depends_on "bison" => :build
 

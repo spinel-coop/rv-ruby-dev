@@ -18,8 +18,6 @@ module Homebrew
                description: "Don't uninstall all dependencies of portable formulae before testing."
         switch "-v", "--verbose",
                description: "Pass `--verbose` to `brew` commands."
-        switch "--with-yjit",
-               description: "Build Ruby with YJIT included (the default)."
         switch "--without-yjit",
                description: "Build Ruby without YJIT included."
         named_args :formula, min: 1
@@ -34,7 +32,7 @@ module Homebrew
         verbose << "--debug" if args.debug?
 
         flags = []
-        flags << (args.without_yjit? ? "--without-yjit" : "--with-yjit")
+        flags << "--without-yjit" if args.without_yjit?
 
         # If test-bot cleanup is performed and auto-updates are disabled, this might not already be installed.
         unless DevelopmentTools.ca_file_handles_most_https_certificates?

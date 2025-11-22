@@ -25,5 +25,4 @@ brew uninstall --force "$PACKAGE"
 brew rv-package "$PACKAGE" \
   --no-uninstall-deps \
   --debug \
-  --verbose \
-  --with-yjit
+  --verbose
