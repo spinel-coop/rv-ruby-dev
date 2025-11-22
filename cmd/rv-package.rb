@@ -43,8 +43,8 @@ module Homebrew
           flags << "--HEAD" unless name.include?("@")
 
           begin
-            # On Linux, install glibc and linux-headers from bottles and don't install their build dependencies.
-            bottled_dep_allowlist = /\A(?:glibc@|linux-headers@|ruby@|rustup|autoconf|pkgconf)/
+            # Install build deps (but not static-linked deps) from bottles, to save compilation time
+            bottled_dep_allowlist = /\A(?:glibc@|linux-headers@|ruby@|rustup|autoconf|pkgconf|bison)/
             deps = Dependency.expand(Formula[name], cache_key: "rv-package-#{name}") do |_dependent, dep|
               Dependency.prune if dep.test? || dep.optional?
               Dependency.prune if dep.name == "rustup" && args.without_yjit?
