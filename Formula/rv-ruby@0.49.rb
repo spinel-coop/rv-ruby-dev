@@ -1,6 +1,8 @@
 require File.expand_path("../Abstract/portable-formula", __dir__)
 
-class RvRubyAT049 < PortableFormula
+class RvRubyAT049 < Formula
+  prepend PortableFormulaMixin
+
   desc "A working upgrade of the oldest extant ruby version"
   homepage "https://github.com/sampersand/ruby-0.49"
   version "0.49"
@@ -10,9 +12,11 @@ class RvRubyAT049 < PortableFormula
 
   option "with-yjit", "Build Ruby with YJIT"
 
+  depends_on "bison" => :build
+
   def install
     Dir.chdir("fixed") do
-      system "./configure", "--disable-silent-rules", *std_configure_args
+      system "./configure", *std_configure_args
       system "make"
       system "mkdir", "-p", bin
       system "make install"

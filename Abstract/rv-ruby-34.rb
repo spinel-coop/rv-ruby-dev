@@ -75,13 +75,15 @@ class RvRuby34 < Formula
   end
 
   def install
-    # share RUSTUP_HOME across installs if provided
-    ENV["RUSTUP_HOME"] = ENV["HOMEBREW_RUSTUP_HOME"] if ENV.key?("HOMEBREW_RUSTUP_HOME")
-    # provide rustc for YJIT compilation
-    system "rustup install 1.58 --profile minimal" unless build.without? "yjit"
+    if build.with? "yjit"
+      # share RUSTUP_HOME across installs if provided
+      ENV["RUSTUP_HOME"] = ENV["HOMEBREW_RUSTUP_HOME"] if ENV.key?("HOMEBREW_RUSTUP_HOME")
+      ENV["RUSTUP_TOOLCHAIN"] = "1.58"
+      system "rustup install 1.58 --profile minimal" unless system("which rustc")
+    end
 
     bundled_gems = File.foreach("gems/bundled_gems").reject do |line|
-      line.blank? || line.start_with?("#")
+      line.blank? || line.start_with?("#") || line =~ /win32/
     end
     resources.each do |resource|
       resource.stage "gems"
@@ -105,7 +107,8 @@ class RvRuby34 < Formula
 
     baseruby = ENV["HOMEBREW_BASERUBY"] || RbConfig.ruby
     baseruby_version = baseruby && %x[#{baseruby} -v]
-    if baseruby && baseruby_version =~ /#{Regexp.escape(version)}/
+    baseruby_allowed = version.to_s =~ /^HEAD/ || baseruby_version =~ /#{Regexp.escape(version)}/
+    if baseruby && baseruby_allowed
       args += %W[--with-baseruby=#{baseruby}]
     else
       odie "HOMEBREW_BASERUBY must contain the path to a ruby #{version} executable, " \
@@ -151,7 +154,8 @@ class RvRuby34 < Formula
 
     # Add a helper load path file so bundled gems can be easily used (used by brew's standalone/init.rb)
     system "make", "ruby.pc"
-    arch = Utils.safe_popen_read("pkg-config", "--variable=arch", "./ruby-#{version.major_minor}.pc").chomp
+    pc_file = Dir.glob("ruby-*.pc").first
+    arch = Utils.safe_popen_read("pkg-config", "--variable=arch", "./#{pc_file}").chomp
     mkdir_p "lib/#{arch}"
     File.open("lib/#{arch}/portable_ruby_gems.rb", "w") do |file|
       (Dir["extensions/*/*/*", base: ".bundle"] + Dir["gems/*/lib", base: ".bundle"]).each do |require_path|
@@ -194,7 +198,9 @@ class RvRuby34 < Formula
     cp_r Dir["#{prefix}/*"], testpath
     ENV["PATH"] = "/usr/bin:/bin"
     ruby = (testpath/"bin/ruby").realpath
-    assert_equal version.to_s.split("-").first, shell_output("#{ruby} -e 'puts RUBY_VERSION'").chomp
+    unless version.to_s =~ /head/i
+      assert_equal version.to_s.split("-").first, shell_output("#{ruby} -e 'puts RUBY_VERSION'").chomp
+    end
     assert_equal ruby.to_s, shell_output("#{ruby} -e 'puts RbConfig.ruby'").chomp
     assert_equal "3632233996",
       shell_output("#{ruby} -rzlib -e 'puts Zlib.crc32(\"test\")'").chomp

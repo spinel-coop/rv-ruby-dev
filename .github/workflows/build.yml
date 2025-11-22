@@ -3,12 +3,12 @@ name: Build
 on:
   workflow_dispatch:
     inputs:
-      version:
+      formula:
         required: true
         type: string
   workflow_call:
     inputs:
-      version:
+      formula:
         required: true
         type: string
 
@@ -33,12 +33,19 @@ jobs:
     steps:
       - uses: actions/checkout@main
 
+      - name: Get version for setup-ruby
+        run: |
+          VERSION=${{ inputs.formula }}
+          VERSION=${VERSION//rv-ruby}
+          VERSION=${VERSION//@}
+          echo VERSION=${VERSION} >> $GITHUB_ENV
+
       # Static gem extensions typically require the same Ruby version available already
       - uses: ruby/setup-ruby@v1
         id: setup-ruby
-        if: ${{ inputs.version != '0.49' }}
+        if: ${{ inputs.formula != 'rv-ruby@0.49' }}
         with:
-          ruby-version: ${{ inputs.version }}
+          ruby-version: ${{ env.VERSION }}
 
       - name: Install Homebrew
         run: |
@@ -56,18 +63,22 @@ jobs:
           fi
           mkdir -p rubies/
           cd rubies
-          brew rv-package --verbose --with-yjit rv-ruby@${{ inputs.version }}
+          brew rv-package --verbose --with-yjit ${{ inputs.formula }}
 
       - name: Upload rv Ruby
         uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
         with:
-          name: rv-ruby@${{ inputs.version }}_${{ matrix.runner }}
-          path: ${{github.workspace}}/rubies
+          name: ${{ inputs.formula }}_${{ matrix.runner }}
+          path: ${{ github.workspace }}/rubies
 
       - name: Test Portable Ruby
         run: |
           mkdir -p rv-ruby/
           tar --strip-components 2 -C rv-ruby -xf rubies/*.tar.gz
           export PATH="${PWD}/rv-ruby/bin:${PATH}"
-          ruby --version --yjit
-          ruby -r debug -r bigdecimal -r json -r yaml -r reline -e "true"
+          if [[ "${{ inputs.formula }}" == "rv-ruby@0.49" ]]; then
+            ruby --version
+          else
+            ruby --version --yjit
+            ruby -r debug -r bigdecimal -r json -r yaml -r reline -e "true"
+          fi

@@ -2,20 +2,27 @@
 
 NUMBER="$1"
 
-set -v
-
-export HOMEBREW_BASERUBY="$HOME/.rubies/ruby-${NUMBER}/bin/ruby"
 export HOMEBREW_RUSTUP_HOME="$HOME/.rustup"
 
-if [[ (! -f "$HOMEBREW_BASERUBY") && "0.49" != "$NUMBER" ]]; then
+if [[ "0.49" != "$NUMBER" && "head" != "$NUMBER" ]]; then
+  export HOMEBREW_BASERUBY="$HOME/.rubies/ruby-${NUMBER}/bin/ruby"
+fi
+
+if [[ -n "$HOMEBREW_BASERUBY" && ! -f "$HOMEBREW_BASERUBY" ]]; then
   brew install ruby-install
   (which apt && sudo apt update) || true
   ruby-install "$NUMBER"
 fi
 
-brew uninstall --force "rv-ruby@${NUMBER}"
+if [[ "head" == "$NUMBER" ]]; then
+  PACKAGE="rv-ruby"
+else
+  PACKAGE="rv-ruby@${NUMBER}"
+fi
 
-brew rv-package "rv-ruby@${NUMBER}" \
+set -v
+brew uninstall --force "$PACKAGE"
+brew rv-package "$PACKAGE" \
   --no-uninstall-deps \
   --debug \
   --verbose \
