@@ -26,11 +26,9 @@ jobs:
       - run: date +%Y%m%d
       - id: setup
         run: |
+          list=$(ls Formula/rv-ruby* | jq --raw-input | jq --slurp --compact-output 'map(. |= .[8:-3])')
           if [[ -n "${{ inputs.formula }}" ]]; then
-            list="[\"${{ inputs.formula }}\"]"
-          else
-            cd Formula
-            list=$(ls rv-ruby* | jq --raw-input | jq --slurp --compact-output 'map(. |= .[:-3])')
+            list=$(echo $list | jq --compact-output 'map(select(. | contains("${{ inputs.formula }}")))')
           fi
           echo formulas=$list >> "$GITHUB_OUTPUT"
           echo "date=$(date +%Y%m%d)" >> "$GITHUB_OUTPUT"
