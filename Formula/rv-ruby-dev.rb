@@ -1,6 +1,6 @@
-require File.expand_path("../Abstract/rv-ruby-34", __dir__)
+require File.expand_path("../Abstract/rv-ruby", __dir__)
 
-class RvRuby < RvRuby34
+class RvRubyDev < RvRuby
   head "https://github.com/ruby/ruby.git", branch: "master"
 
   depends_on "autoconf" => :build

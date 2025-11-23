@@ -4,7 +4,7 @@ NUMBER="$1"
 
 export HOMEBREW_RUSTUP_HOME="$HOME/.rustup"
 
-if [[ "0.49" != "$NUMBER" && "head" != "$NUMBER" ]]; then
+if [[ "0.49" != "$NUMBER" && "dev" != "$NUMBER" ]]; then
   export HOMEBREW_BASERUBY="$HOME/.rubies/ruby-${NUMBER}/bin/ruby"
 fi
 
@@ -14,8 +14,8 @@ if [[ -n "$HOMEBREW_BASERUBY" && ! -f "$HOMEBREW_BASERUBY" ]]; then
   ruby-install "$NUMBER"
 fi
 
-if [[ "head" == "$NUMBER" ]]; then
-  PACKAGE="rv-ruby"
+if [[ "dev" == "$NUMBER" ]]; then
+  PACKAGE="rv-ruby-dev"
 else
   PACKAGE="rv-ruby@${NUMBER}"
 fi
