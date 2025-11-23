@@ -65,7 +65,7 @@ module Homebrew
             # Build the main bottle
             safe_system HOMEBREW_BREW_FILE, "install", "--build-bottle", *flags, *verbose, name
             # Uninstall the dependencies we linked in
-            unless args.no_uninstall_deps?
+            unless args.no_uninstall_deps? || deps.empty?
               safe_system HOMEBREW_BREW_FILE, "uninstall", "--force", "--ignore-dependencies", *verbose, *deps
             end
             safe_system HOMEBREW_BREW_FILE, "test", *verbose, name
