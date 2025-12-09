@@ -90,20 +90,27 @@ module Homebrew
         yjit_tag = disable_yjit ? ".no_yjit." : "."
 
         Dir.glob("*.bottle.json").each do |j|
+          commit = j.match(/-HEAD-([a-f0-9]+)/){|m|m[1]}
+
           json = File.read j
           json.gsub! "#{name}--", "ruby-"
+          json.gsub! /-HEAD-[a-f0-9]+/, ""
+          json.gsub!(".sequoia.", ".ventura.")
           json.gsub!(".bottle.", yjit_tag)
           json.gsub! ERB::Util.url_encode(name), "ruby"
           hash = JSON.parse(json)
           bottle_name = name.gsub(/^rv-/, "")
-          bottle_name << "@head" unless bottle_name.include?("@")
+          bottle_name.gsub!("-dev", "@dev")
           hash[hash.keys.first]["formula"]["name"] = bottle_name
           hash[hash.keys.first]["formula"]["pkg_version"] = Date.today.to_s.tr("-", "")
+          hash[hash.keys.first]["formula"]["pkg_version"] << "-" << commit if commit
           File.write j, JSON.generate(hash)
         end
 
         Dir.glob("#{name}*").each do |f|
           r = f.gsub("#{name}--", "ruby-")
+          r = r.gsub /-HEAD-[a-f0-9]+/, "-dev"
+          r = r.gsub(".sequoia.", ".ventura.")
           r = r.gsub(".bottle.", yjit_tag)
           FileUtils.mv f, r
         end

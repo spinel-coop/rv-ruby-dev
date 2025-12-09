@@ -5,7 +5,7 @@ require File.expand_path("../Abstract/portable-formula", __dir__)
 # for this case, so we are stuck relying on ruby/setup-ruby for now.  If you're
 # trying to build outside GHA, you probably need to set HOMEBREW_BASERUBY to the
 # absolute path of a ruby binary for this to work.
-class RvRuby34 < Formula
+class RvRuby < Formula
   def self.inherited(subclass)
     subclass.class_eval do
       super
@@ -97,6 +97,7 @@ class RvRuby34 < Formula
 
     args = %W[
       --prefix=#{prefix}
+      --with-baseruby=#{RbConfig.ruby}
       --enable-load-relative
       --with-out-ext=win32,win32ole
       --without-gmp
@@ -104,16 +105,6 @@ class RvRuby34 < Formula
       --disable-install-rdoc
       --disable-dependency-tracking
     ]
-
-    baseruby = ENV["HOMEBREW_BASERUBY"] || RbConfig.ruby
-    baseruby_version = baseruby && %x[#{baseruby} -v]
-    baseruby_allowed = baseruby_version =~ /#{Regexp.escape(version)}/
-    if baseruby && baseruby_allowed
-      args += %W[--with-baseruby=#{baseruby}]
-    else
-      odie "HOMEBREW_BASERUBY must contain the path to a ruby #{version} executable, " \
-        "but instead contains #{baseruby}, with version #{baseruby_version}"
-    end
 
     args += %W[--enable-yjit] unless build.without? "yjit"
 
