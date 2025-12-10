@@ -94,7 +94,7 @@ module Homebrew
 
           json = File.read j
           json.gsub! "#{name}--", "ruby-"
-          json.gsub! /-HEAD-[a-f0-9]+/, ""
+          json.gsub! /-HEAD-[a-f0-9]+/, "-dev"
           json.gsub!(".sequoia.", ".ventura.")
           json.gsub!(".bottle.", yjit_tag)
           json.gsub! ERB::Util.url_encode(name), "ruby"
