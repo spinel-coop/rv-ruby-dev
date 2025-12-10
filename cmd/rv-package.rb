@@ -100,7 +100,6 @@ module Homebrew
           json.gsub! ERB::Util.url_encode(name), "ruby"
           hash = JSON.parse(json)
           bottle_name = name.gsub(/^rv-/, "")
-          bottle_name.gsub!("-dev", "@dev")
           hash[hash.keys.first]["formula"]["name"] = bottle_name
           hash[hash.keys.first]["formula"]["pkg_version"] = Date.today.to_s.tr("-", "")
           hash[hash.keys.first]["formula"]["pkg_version"] << "-" << commit if commit
