@@ -107,6 +107,8 @@ class RvRuby33 < Formula
       baseruby_version = baseruby && %x[#{baseruby} -v]
       if baseruby && baseruby_version =~ /#{Regexp.escape(version)}/
         args += %W[--with-baseruby=#{baseruby}]
+      else
+        args += %W[--with-baseruby=#{RbConfig.ruby}]
       end
     end
 

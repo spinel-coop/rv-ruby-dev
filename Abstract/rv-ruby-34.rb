@@ -110,6 +110,8 @@ class RvRuby34 < Formula
     baseruby_allowed = baseruby_version =~ /#{Regexp.escape(version)}/
     if baseruby && baseruby_allowed
       args += %W[--with-baseruby=#{baseruby}]
+    else
+      args += %W[--with-baseruby=#{RbConfig.ruby}]
     end
 
     args += %W[--enable-yjit] unless build.without? "yjit"
