@@ -107,9 +107,6 @@ class RvRuby33 < Formula
       baseruby_version = baseruby && %x[#{baseruby} -v]
       if baseruby && baseruby_version =~ /#{Regexp.escape(version)}/
         args += %W[--with-baseruby=#{baseruby}]
-      else
-        odie "HOMEBREW_BASERUBY must contain the path to a ruby #{version} executable, " \
-          "but instead contains #{baseruby}, with version #{baseruby_version}"
       end
     end
 

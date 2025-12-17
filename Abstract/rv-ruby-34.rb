@@ -110,9 +110,6 @@ class RvRuby34 < Formula
     baseruby_allowed = baseruby_version =~ /#{Regexp.escape(version)}/
     if baseruby && baseruby_allowed
       args += %W[--with-baseruby=#{baseruby}]
-    else
-      odie "HOMEBREW_BASERUBY must contain the path to a ruby #{version} executable, " \
-        "but instead contains #{baseruby}, with version #{baseruby_version}"
     end
 
     args += %W[--enable-yjit] unless build.without? "yjit"
