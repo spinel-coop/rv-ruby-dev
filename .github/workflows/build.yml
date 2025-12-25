@@ -54,14 +54,13 @@ jobs:
           /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
           echo "/home/linuxbrew/.linuxbrew/bin" >> $GITHUB_PATH
           echo "/home/linuxbrew/.linuxbrew/sbin" >> $GITHUB_PATH
-          eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
-          mkdir -p "$(brew --prefix)/Library/Homebrew/vendor/bundle/ruby/3.4.0/gems"
-          chmod -R go-w "$(brew --prefix)/Library/Homebrew/vendor/bundle/ruby/3.4.0/gems"
 
       - name: Tap repo
         run: bin/setup
 
       - name: Build rv Ruby
+        env:
+          HOMEBREW_NO_INSTALL_CLEANUP: 1
         run: |
           if [[ -n "${{ steps.setup-ruby.outputs.ruby-prefix }}" ]]; then
             export HOMEBREW_BASERUBY="${{ steps.setup-ruby.outputs.ruby-prefix }}/bin/ruby"
