@@ -70,8 +70,10 @@ module Homebrew
             end
 
             # On Ubuntu for ARM, the permissions are somehow wrong and `brew test` dies
-            safe_system "bash", "-c", 'chmod -R +t $(brew --prefix)/Homebrew/Library/Homebrew/vendor/bundle'
-            safe_system HOMEBREW_BREW_FILE, "install-bundler-gems"
+            if File.exist? File.join(HOMEBREW_PREFIX, "Homebrew/Library/Homebrew/vendor/bundle")
+              safe_system "bash", "-c", 'chmod -R +t $(brew --prefix)/Homebrew/Library/Homebrew/vendor/bundle'
+              safe_system HOMEBREW_BREW_FILE, "install-bundler-gems"
+            end
 
             # Test the static binary we just built, now that the separate deps have been deleted
             safe_system HOMEBREW_BREW_FILE, "test", *verbose, name
