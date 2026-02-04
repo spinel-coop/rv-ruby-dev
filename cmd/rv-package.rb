@@ -68,6 +68,12 @@ module Homebrew
             unless args.no_uninstall_deps? || deps.empty?
               safe_system HOMEBREW_BREW_FILE, "uninstall", "--force", "--ignore-dependencies", *verbose, *deps
             end
+
+            # On Ubuntu for ARM, the permissions are somehow wrong and `brew test` dies
+            safe_system "bash", "-c", 'chmod -R +t $(brew --prefix)/Homebrew/Library/Homebrew/vendor/bundle'
+            safe_system HOMEBREW_BREW_FILE, "install-bundler-gems"
+
+            # Test the static binary we just built, now that the separate deps have been deleted
             safe_system HOMEBREW_BREW_FILE, "test", *verbose, name
             puts "Linkage information:"
             safe_system HOMEBREW_BREW_FILE, "linkage", *verbose, name
