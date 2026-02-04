@@ -106,7 +106,7 @@ class RvRuby < Formula
       --disable-dependency-tracking
     ]
 
-    args += %W[--enable-yjit] unless build.without? "yjit"
+    args += %W[--enable-yjit --enable-zjit] unless build.without? "yjit"
 
     # We don't specify OpenSSL as we want it to use the pkg-config, which `--with-openssl-dir` will disable
     args += %W[
