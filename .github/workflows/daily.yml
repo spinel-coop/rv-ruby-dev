@@ -12,5 +12,3 @@ jobs:
       packages: write
     if: ${{ github.repository == 'spinel-coop/rv-ruby-dev' }}
     uses: ./.github/workflows/release.yml
-    with:
-      formula: "rv-ruby-dev"
