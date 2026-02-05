@@ -6,6 +6,11 @@ on:
       formula:
         required: false
         type: string
+  workflow_call:
+    inputs:
+      formula:
+        required: false
+        type: string
 
 env:
   HOMEBREW_DEVELOPER: 1
@@ -31,10 +36,7 @@ jobs:
             # if we passed a string, only build matches
             list=$(echo $list | jq --compact-output 'map(select(. | contains("${{ inputs.formula }}")))')
           else
-            if [[ "${{ github.repository }}" == "spinel-coop/rv-ruby-dev" ]]; then
-              # without a filter, the dev repo only builds dev
-              list='["rv-ruby-dev"]'
-            else
+            if [[ "${{ github.repository }}" != "spinel-coop/rv-ruby-dev" ]]; then
               # without a filter, the non-dev repo builds all but dev
               list=${list/'"'rv-ruby-dev'"',/}
             fi
