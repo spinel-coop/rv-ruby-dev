@@ -42,7 +42,7 @@ jobs:
           echo formulas=$list >> "$GITHUB_OUTPUT"
           echo "date=$(date +%Y%m%d)" >> "$GITHUB_OUTPUT"
 
-  build:
+  build_matrix:
     needs: setup
     strategy:
       fail-fast: false
@@ -53,7 +53,7 @@ jobs:
       formula: ${{ matrix.formula }}
 
   release:
-    needs: [setup, build]
+    needs: [setup, build_matrix]
     runs-on: ubuntu-latest
     permissions:
       contents: write
