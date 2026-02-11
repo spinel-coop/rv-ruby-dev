@@ -1,0 +1,88 @@
+name: Build Alpine
+
+on:
+  workflow_dispatch:
+    inputs:
+      formula:
+        description: "Formula to build (e.g., rv-ruby@3.4.8)"
+        required: true
+        type: string
+  workflow_call:
+    inputs:
+      formula:
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-latest
+            arch: x86_64
+          - runner: ubuntu-24.04-arm
+            arch: aarch64
+    runs-on: ${{ matrix.runner }}
+    container:
+      # Pinned, not :latest — the Alpine version determines the minimum Alpine
+      # version users can run these binaries on (forward-compatible but not backward).
+      # 3.21 was released Dec 2024 and is supported until Nov 2026.
+      # Bump when the current version approaches EOL.
+      # See: https://alpinelinux.org/releases/
+      image: alpine:3.21
+    steps:
+      - uses: actions/checkout@main
+
+      - name: Install build dependencies
+        run: |
+          apk add --no-cache \
+            autoconf bzip2 bzip2-dev ca-certificates coreutils \
+            dpkg-dev g++ gcc gdbm-dev glib-dev gmp-dev \
+            libc-dev libffi-dev libxml2-dev libxslt-dev \
+            linux-headers make ncurses-dev openssl-dev \
+            patch procps readline-dev yaml-dev zlib-dev \
+            tar xz curl rust git patchelf
+
+      - name: Extract version info from formula
+        id: info
+        run: |
+          FORMULA="Formula/${{ inputs.formula }}.rb"
+          if [ ! -f "$FORMULA" ]; then
+            echo "ERROR: Formula file not found: $FORMULA"
+            exit 1
+          fi
+          URL=$(grep 'url "' "$FORMULA" | head -1 | sed 's/.*url "//;s/".*//')
+          SHA=$(grep 'sha256 "' "$FORMULA" | head -1 | sed 's/.*sha256 "//;s/".*//')
+          VERSION=$(echo "${{ inputs.formula }}" | sed 's/rv-ruby@//')
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+          echo "sha256=$SHA" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Resolved: Ruby $VERSION from $URL"
+
+      - name: Build Ruby
+        run: bin/alpine "${{ steps.info.outputs.version }}" "${{ steps.info.outputs.url }}" "${{ steps.info.outputs.sha256 }}"
+
+      - name: Test Ruby
+        run: |
+          mkdir -p test-ruby/
+          tar --strip-components 2 -C test-ruby -xf rubies/*.tar.gz
+          export PATH="${PWD}/test-ruby/bin:${PATH}"
+          ruby --version
+          ruby -e 'puts RUBY_DESCRIPTION'
+          ruby -rzlib -e 'puts Zlib.crc32("test")'
+          ruby -ryaml -e 'puts YAML.load("test: 1")'
+          ruby -ropenssl -e 'puts OpenSSL::Digest::SHA256.hexdigest("test")'
+          ruby -rreadline -e 'puts Readline::VERSION'
+          ruby -rfiddle -e 'puts Fiddle::RUBY_FREE'
+          ruby -e 'puts Gem.default_dir'
+          echo "All extension tests passed."
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: ${{ inputs.formula }}_alpine-${{ matrix.arch }}
+          path: rubies/*.tar.gz
