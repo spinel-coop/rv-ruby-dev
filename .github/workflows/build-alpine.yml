@@ -1,6 +1,7 @@
 name: Build Alpine
 
 on:
+  pull_request: # temporary — remove after workflow is verified on CI
   workflow_dispatch:
     inputs:
       formula:
@@ -12,6 +13,10 @@ on:
       formula:
         required: true
         type: string
+
+env:
+  # Default formula for pull_request trigger (which doesn't provide inputs)
+  FORMULA: ${{ inputs.formula || 'rv-ruby@3.4.8' }}
 
 permissions:
   contents: read
@@ -50,14 +55,14 @@ jobs:
       - name: Extract version info from formula
         id: info
         run: |
-          FORMULA="Formula/${{ inputs.formula }}.rb"
+          FORMULA="Formula/${{ env.FORMULA }}.rb"
           if [ ! -f "$FORMULA" ]; then
             echo "ERROR: Formula file not found: $FORMULA"
             exit 1
           fi
           URL=$(grep 'url "' "$FORMULA" | head -1 | sed 's/.*url "//;s/".*//')
           SHA=$(grep 'sha256 "' "$FORMULA" | head -1 | sed 's/.*sha256 "//;s/".*//')
-          VERSION=$(echo "${{ inputs.formula }}" | sed 's/rv-ruby@//')
+          VERSION=$(echo "${{ env.FORMULA }}" | sed 's/rv-ruby@//')
           echo "url=$URL" >> "$GITHUB_OUTPUT"
           echo "sha256=$SHA" >> "$GITHUB_OUTPUT"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
@@ -84,5 +89,5 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
-          name: ${{ inputs.formula }}_alpine-${{ matrix.arch }}
+          name: ${{ env.FORMULA }}_alpine-${{ matrix.arch }}
           path: rubies/*.tar.gz
