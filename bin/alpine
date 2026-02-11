@@ -1,0 +1,168 @@
+#!/bin/sh
+# bin/alpine
+# Build Ruby from source on Alpine Linux (musl).
+#
+# This is the Alpine equivalent of the Homebrew-based build pipeline.
+# Homebrew can't run on Alpine (musl), so we compile from source using
+# system packages, following the Docker official ruby:alpine pattern.
+#
+# Usage: bin/alpine VERSION URL SHA256
+#   VERSION  Ruby version (e.g., 3.4.8)
+#   URL      Source tarball URL
+#   SHA256   Expected SHA256 checksum
+#
+# Output: rubies/ruby-VERSION.<arch>_linux_musl.tar.gz
+#
+# Required packages (install via apk):
+#   autoconf bzip2-dev ca-certificates coreutils curl dpkg-dev g++ gcc
+#   gdbm-dev glib-dev gmp-dev libc-dev libffi-dev libxml2-dev libxslt-dev
+#   linux-headers make ncurses-dev openssl-dev patch patchelf procps
+#   readline-dev rust tar xz yaml-dev zlib-dev git
+
+set -eu
+
+VERSION="${1:?Usage: bin/alpine VERSION URL SHA256}"
+URL="${2:?Usage: bin/alpine VERSION URL SHA256}"
+SHA256="${3:?Usage: bin/alpine VERSION URL SHA256}"
+
+SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+BUILD_DIR="/tmp/ruby-src"
+INSTALL_PREFIX="/tmp/ruby-install/rv-ruby@${VERSION}/${VERSION}"
+OUTPUT_DIR="${SCRIPT_DIR}/rubies"
+
+echo "=== Building Ruby ${VERSION} for Alpine (musl) ==="
+echo "  URL:    ${URL}"
+echo "  SHA256: ${SHA256}"
+echo "  Prefix: ${INSTALL_PREFIX}"
+
+# --- Download and verify ---
+echo "=== Downloading Ruby source ==="
+mkdir -p "${BUILD_DIR}"
+cd "${BUILD_DIR}"
+curl -fsSL -o "ruby-${VERSION}.tar.gz" "${URL}"
+
+echo "${SHA256}  ruby-${VERSION}.tar.gz" | sha256sum -c -
+echo "Checksum verified."
+
+# --- Extract ---
+echo "=== Extracting source ==="
+tar xzf "ruby-${VERSION}.tar.gz"
+cd "ruby-${VERSION}"
+
+# --- Apply musl thread-stack patch ---
+# musl's pthread_getattr_np() returns ~80KB for the main thread stack,
+# causing SystemStackError. This patch (from Ruby Bug #19716) parses
+# /proc/self/maps instead. Required until upstream Ruby merges the fix.
+# See patches/README.md for full provenance.
+echo "=== Applying musl thread-stack patch ==="
+if patch -p1 --dry-run -i "${SCRIPT_DIR}/patches/musl-thread-stack-fix.patch" > /dev/null 2>&1; then
+  patch -p1 -i "${SCRIPT_DIR}/patches/musl-thread-stack-fix.patch"
+  echo "Patch applied successfully."
+else
+  echo "Patch does not apply cleanly (may already be fixed upstream). Skipping."
+fi
+
+# --- Configure ---
+echo "=== Configuring Ruby ${VERSION} ==="
+
+# Detect build architecture for configure
+ARCH="$(uname -m)"
+BUILD_TRIPLE="${ARCH}-alpine-linux-musl"
+
+mkdir -p "${INSTALL_PREFIX}"
+
+# Statically link libgcc so the Ruby binary is portable — users shouldn't
+# need gcc installed at runtime. Without this, libruby.so depends on
+# libgcc_s.so.1 for _Unwind_* symbols (GCC exception handling).
+export LDFLAGS="-static-libgcc"
+
+./configure \
+  --prefix="${INSTALL_PREFIX}" \
+  --build="${BUILD_TRIPLE}" \
+  --enable-load-relative \
+  --enable-shared \
+  --enable-yjit \
+  --disable-install-doc \
+  --disable-install-rdoc \
+  --disable-dependency-tracking \
+  --with-out-ext=win32,win32ole \
+  --without-gmp
+
+# --- Build ---
+echo "=== Building Ruby ${VERSION} ($(nproc) jobs) ==="
+make -j "$(nproc)"
+
+# --- Install ---
+echo "=== Installing Ruby ${VERSION} ==="
+make install
+
+# --- Bundle non-base-system shared libraries for portability ---
+# Alpine base includes libz, libssl, libcrypto, but NOT libyaml or libffi.
+# Bundle these into Ruby's lib/ dir so users don't need extra packages.
+# Then patch RPATH on the extensions so the dynamic linker finds them.
+echo "=== Bundling shared libraries for portability ==="
+RUBY_PLATFORM=$("${INSTALL_PREFIX}/bin/ruby" -e 'print RUBY_PLATFORM')
+RUBY_API_VERSION=$("${INSTALL_PREFIX}/bin/ruby" -e 'print RbConfig::CONFIG["ruby_version"]')
+EXT_DIR="${INSTALL_PREFIX}/lib/ruby/${RUBY_API_VERSION}/${RUBY_PLATFORM}"
+
+for lib in /usr/lib/libyaml*.so* /usr/lib/libffi*.so*; do
+  [ -f "$lib" ] || continue
+  cp -P "$lib" "${INSTALL_PREFIX}/lib/"
+  echo "  Bundled: $(basename "$lib")"
+done
+
+# Extensions live at lib/ruby/<api_version>/<platform>/*.so — 3 dirs up is lib/
+for ext in psych.so fiddle.so; do
+  extpath="${EXT_DIR}/${ext}"
+  if [ -f "$extpath" ]; then
+    patchelf --set-rpath '$ORIGIN/../../..' "$extpath"
+    echo "  Patched RPATH: ${ext}"
+  fi
+done
+
+# --- Strip debug symbols to reduce tarball size ---
+# Same approach as Docker official ruby:alpine. --strip-unneeded removes
+# debug symbols while preserving the dynamic section (RPATH, etc.).
+echo "=== Stripping binaries ==="
+BEFORE_SIZE=$(du -sh "${INSTALL_PREFIX}" | cut -f1)
+find "${INSTALL_PREFIX}" -type f \( -perm -u+x -o -name '*.so' -o -name '*.so.*' \) \
+  -exec strip --strip-unneeded {} + 2>/dev/null || true
+AFTER_SIZE=$(du -sh "${INSTALL_PREFIX}" | cut -f1)
+echo "  Before: ${BEFORE_SIZE}, After: ${AFTER_SIZE}"
+
+# --- Verify the built Ruby works ---
+echo "=== Verifying Ruby installation ==="
+"${INSTALL_PREFIX}/bin/ruby" --version
+"${INSTALL_PREFIX}/bin/ruby" -e 'puts "Ruby #{RUBY_VERSION} on #{RUBY_PLATFORM}"'
+
+# Verify YJIT compiled (requires rust at build time)
+"${INSTALL_PREFIX}/bin/ruby" --yjit -e 'puts "YJIT: #{RubyVM::YJIT.enabled?}"'
+
+# Verify bundled libraries work (libyaml via psych, libffi via fiddle)
+"${INSTALL_PREFIX}/bin/ruby" -ryaml -e 'puts "yaml: ok"'
+"${INSTALL_PREFIX}/bin/ruby" -rfiddle -e 'puts "fiddle: ok"'
+
+# --- Package ---
+# rv expects tarballs with internal prefix: rv-ruby@{version}/{version}/
+# rv's extract_tarball() rewrites this to ruby-{version}/ on extraction.
+echo "=== Packaging tarball ==="
+mkdir -p "${OUTPUT_DIR}"
+
+# Map uname arch to rv's naming convention
+case "${ARCH}" in
+  x86_64)  ARCH_STR="x86_64_linux_musl" ;;
+  aarch64) ARCH_STR="arm64_linux_musl" ;;
+  *)       echo "ERROR: unsupported architecture: ${ARCH}"; exit 1 ;;
+esac
+
+TARBALL="${OUTPUT_DIR}/ruby-${VERSION}.${ARCH_STR}.tar.gz"
+
+cd /tmp/ruby-install
+tar czf "${TARBALL}" "rv-ruby@${VERSION}"
+
+# --- Cleanup ---
+rm -rf "${BUILD_DIR}"
+
+echo "=== Done ==="
+echo "Output: ${TARBALL}"
+ls -lh "${TARBALL}"
