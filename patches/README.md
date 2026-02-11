@@ -5,7 +5,7 @@ Patches applied during Ruby builds where upstream hasn't yet incorporated a fix.
 ## `musl-thread-stack-fix.patch`
 
 **Affects:** All Ruby versions on musl/Alpine Linux (3.2.x, 3.3.x, 3.4.x)
-**Applied by:** `bin/build-alpine` (skipped automatically if the patch doesn't apply cleanly)
+**Applied by:** `bin/alpine` (skipped automatically if the patch doesn't apply cleanly)
 
 ### What it fixes
 
@@ -37,6 +37,6 @@ This patch has a long history — first reported in 2018, never merged upstream:
 ### When can we remove it?
 
 When Ruby upstream merges the fix into their release branches. Track the status
-at https://bugs.ruby-lang.org/issues/19716. The `bin/build-alpine` script
+at https://bugs.ruby-lang.org/issues/19716. The `bin/alpine` script
 already handles this gracefully — if the patch doesn't apply (because it's been
 upstreamed), it skips it with a log message.

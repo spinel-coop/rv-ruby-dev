@@ -24,10 +24,10 @@ apk add autoconf bzip2 bzip2-dev ca-certificates coreutils dpkg-dev \
   g++ gcc gdbm-dev glib-dev gmp-dev libc-dev libffi-dev libxml2-dev \
   libxslt-dev linux-headers make ncurses-dev openssl-dev patch procps \
   readline-dev yaml-dev zlib-dev tar xz curl rust git patchelf
-bin/build-alpine 3.4.8 URL SHA256
+bin/alpine 3.4.8 URL SHA256
 ```
 
-See `bin/build-alpine` for details. Patches applied during Alpine builds are
+See `bin/alpine` for details. Patches applied during Alpine builds are
 documented in [`patches/README.md`](patches/README.md).
 
 ## How do I issue a new release
