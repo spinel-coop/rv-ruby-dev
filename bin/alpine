@@ -4,7 +4,8 @@
 #
 # This is the Alpine equivalent of the Homebrew-based build pipeline.
 # Homebrew can't run on Alpine (musl), so we compile from source using
-# system packages, following the Docker official ruby:alpine pattern.
+# system packages. Dependencies are statically linked so the resulting
+# Ruby works on any Alpine system without extra packages installed.
 #
 # Usage: bin/alpine VERSION URL SHA256
 #   VERSION  Ruby version (e.g., 3.4.8)
@@ -16,8 +17,9 @@
 # Required packages (install via apk):
 #   autoconf bzip2-dev ca-certificates coreutils curl dpkg-dev g++ gcc
 #   gdbm-dev glib-dev gmp-dev libc-dev libffi-dev libxml2-dev libxslt-dev
-#   linux-headers make ncurses-dev openssl-dev patch patchelf procps
-#   readline-dev rust tar xz yaml-dev zlib-dev git
+#   linux-headers make ncurses-dev openssl-dev openssl-libs-static patch
+#   procps readline-dev readline-static rust tar xz yaml-dev yaml-static
+#   zlib-dev zlib-static git
 
 set -eu
 
@@ -28,12 +30,50 @@ SHA256="${3:?Usage: bin/alpine VERSION URL SHA256}"
 SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 BUILD_DIR="/tmp/ruby-src"
 INSTALL_PREFIX="/tmp/ruby-install/rv-ruby@${VERSION}/${VERSION}"
+STATIC_DIR="/tmp/static-deps"
 OUTPUT_DIR="${SCRIPT_DIR}/rubies"
 
 echo "=== Building Ruby ${VERSION} for Alpine (musl) ==="
 echo "  URL:    ${URL}"
 echo "  SHA256: ${SHA256}"
 echo "  Prefix: ${INSTALL_PREFIX}"
+
+# --- Prepare static-only dependency directories ---
+# Same approach as Homebrew portable-ruby: create directories containing only
+# static libraries (.a) and headers, then point Ruby's ./configure at them.
+# This forces the linker to use static libraries, producing a self-contained
+# binary that works on any Alpine without extra packages installed.
+echo "=== Preparing static dependency directories ==="
+mkdir -p "${STATIC_DIR}"
+
+for dep in yaml ffi z ssl crypto readline ncursesw gdbm; do
+  mkdir -p "${STATIC_DIR}/lib"
+done
+mkdir -p "${STATIC_DIR}/include"
+
+# Copy static libraries
+for lib in libyaml.a libffi.a libz.a libssl.a libcrypto.a libreadline.a libncursesw.a libgdbm.a; do
+  if [ -f "/usr/lib/${lib}" ]; then
+    cp "/usr/lib/${lib}" "${STATIC_DIR}/lib/"
+    echo "  Static: ${lib}"
+  fi
+done
+
+# Copy headers (configure needs them to detect features)
+for dir in /usr/include/yaml.h /usr/include/ffi.h /usr/include/ffi /usr/include/zlib.h \
+           /usr/include/zconf.h /usr/include/openssl /usr/include/readline /usr/include/gdbm.h; do
+  if [ -e "$dir" ]; then
+    cp -r "$dir" "${STATIC_DIR}/include/"
+  fi
+done
+
+# Copy pkg-config files so Ruby's configure can find static deps
+mkdir -p "${STATIC_DIR}/lib/pkgconfig"
+for pc in yaml-0.1.pc libffi.pc zlib.pc openssl.pc libssl.pc libcrypto.pc readline.pc; do
+  if [ -f "/usr/lib/pkgconfig/${pc}" ]; then
+    cp "/usr/lib/pkgconfig/${pc}" "${STATIC_DIR}/lib/pkgconfig/"
+  fi
+done
 
 # --- Download and verify ---
 echo "=== Downloading Ruby source ==="
@@ -76,6 +116,10 @@ mkdir -p "${INSTALL_PREFIX}"
 # libgcc_s.so.1 for _Unwind_* symbols (GCC exception handling).
 export LDFLAGS="-static-libgcc"
 
+# Point pkg-config at our static-only directory so Ruby finds .a files
+# instead of system .so files.
+export PKG_CONFIG_PATH="${STATIC_DIR}/lib/pkgconfig"
+
 ./configure \
   --prefix="${INSTALL_PREFIX}" \
   --build="${BUILD_TRIPLE}" \
@@ -85,6 +129,12 @@ export LDFLAGS="-static-libgcc"
   --disable-install-doc \
   --disable-install-rdoc \
   --disable-dependency-tracking \
+  --with-static-linked-ext \
+  --with-libyaml-dir="${STATIC_DIR}" \
+  --with-libffi-dir="${STATIC_DIR}" \
+  --with-zlib-dir="${STATIC_DIR}" \
+  --with-readline-dir="${STATIC_DIR}" \
+  --with-gdbm-dir="${STATIC_DIR}" \
   --with-out-ext=win32,win32ole \
   --without-gmp
 
@@ -95,30 +145,6 @@ make -j "$(nproc)"
 # --- Install ---
 echo "=== Installing Ruby ${VERSION} ==="
 make install
-
-# --- Bundle non-base-system shared libraries for portability ---
-# Alpine base includes libz, libssl, libcrypto, but NOT libyaml or libffi.
-# Bundle these into Ruby's lib/ dir so users don't need extra packages.
-# Then patch RPATH on the extensions so the dynamic linker finds them.
-echo "=== Bundling shared libraries for portability ==="
-RUBY_PLATFORM=$("${INSTALL_PREFIX}/bin/ruby" -e 'print RUBY_PLATFORM')
-RUBY_API_VERSION=$("${INSTALL_PREFIX}/bin/ruby" -e 'print RbConfig::CONFIG["ruby_version"]')
-EXT_DIR="${INSTALL_PREFIX}/lib/ruby/${RUBY_API_VERSION}/${RUBY_PLATFORM}"
-
-for lib in /usr/lib/libyaml*.so* /usr/lib/libffi*.so*; do
-  [ -f "$lib" ] || continue
-  cp -P "$lib" "${INSTALL_PREFIX}/lib/"
-  echo "  Bundled: $(basename "$lib")"
-done
-
-# Extensions live at lib/ruby/<api_version>/<platform>/*.so — 3 dirs up is lib/
-for ext in psych.so fiddle.so; do
-  extpath="${EXT_DIR}/${ext}"
-  if [ -f "$extpath" ]; then
-    patchelf --set-rpath '$ORIGIN/../../..' "$extpath"
-    echo "  Patched RPATH: ${ext}"
-  fi
-done
 
 # --- Strip debug symbols to reduce tarball size ---
 # Same approach as Docker official ruby:alpine. --strip-unneeded removes
@@ -138,9 +164,12 @@ echo "=== Verifying Ruby installation ==="
 # Verify YJIT compiled (requires rust at build time)
 "${INSTALL_PREFIX}/bin/ruby" --yjit -e 'puts "YJIT: #{RubyVM::YJIT.enabled?}"'
 
-# Verify bundled libraries work (libyaml via psych, libffi via fiddle)
+# Verify statically linked extensions work
 "${INSTALL_PREFIX}/bin/ruby" -ryaml -e 'puts "yaml: ok"'
 "${INSTALL_PREFIX}/bin/ruby" -rfiddle -e 'puts "fiddle: ok"'
+"${INSTALL_PREFIX}/bin/ruby" -rzlib -e 'puts "zlib: ok"'
+"${INSTALL_PREFIX}/bin/ruby" -ropenssl -e 'puts "openssl: ok"'
+"${INSTALL_PREFIX}/bin/ruby" -rreadline -e 'puts "readline: ok"'
 
 # --- Package ---
 # rv expects tarballs with internal prefix: rv-ruby@{version}/{version}/
@@ -161,7 +190,7 @@ cd /tmp/ruby-install
 tar czf "${TARBALL}" "rv-ruby@${VERSION}"
 
 # --- Cleanup ---
-rm -rf "${BUILD_DIR}"
+rm -rf "${BUILD_DIR}" "${STATIC_DIR}"
 
 echo "=== Done ==="
 echo "Output: ${TARBALL}"

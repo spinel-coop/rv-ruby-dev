@@ -49,8 +49,9 @@ jobs:
             dpkg-dev g++ gcc gdbm-dev glib-dev gmp-dev \
             libc-dev libffi-dev libxml2-dev libxslt-dev \
             linux-headers make ncurses-dev openssl-dev \
-            patch procps readline-dev yaml-dev zlib-dev \
-            tar xz curl rust git patchelf
+            openssl-libs-static patch procps readline-dev \
+            readline-static yaml-dev yaml-static zlib-dev \
+            zlib-static tar xz curl rust git
 
       - name: Extract version info from formula
         id: info
