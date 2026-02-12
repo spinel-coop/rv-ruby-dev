@@ -17,6 +17,12 @@ on:
 env:
   # Default formula for pull_request trigger (which doesn't provide inputs)
   FORMULA: ${{ inputs.formula || 'rv-ruby@3.4.8' }}
+  # Pinned, not :latest — the Alpine version determines the minimum Alpine
+  # version users can run these binaries on (forward-compatible but not backward).
+  # 3.21 was released Dec 2024 and is supported until Nov 2026.
+  # Bump when the current version approaches EOL.
+  # See: https://alpinelinux.org/releases/
+  ALPINE_IMAGE: alpine:3.21
 
 permissions:
   contents: read
@@ -32,26 +38,11 @@ jobs:
           - runner: ubuntu-24.04-arm
             arch: aarch64
     runs-on: ${{ matrix.runner }}
-    container:
-      # Pinned, not :latest — the Alpine version determines the minimum Alpine
-      # version users can run these binaries on (forward-compatible but not backward).
-      # 3.21 was released Dec 2024 and is supported until Nov 2026.
-      # Bump when the current version approaches EOL.
-      # See: https://alpinelinux.org/releases/
-      image: alpine:3.21
+    # Note: we use `docker run` in steps instead of `container:` because
+    # GitHub's JS-based actions (checkout, upload-artifact) don't support
+    # Alpine containers on ARM runners.
     steps:
       - uses: actions/checkout@main
-
-      - name: Install build dependencies
-        run: |
-          apk add --no-cache \
-            autoconf bzip2 bzip2-dev ca-certificates coreutils \
-            dpkg-dev g++ gcc gdbm-dev glib-dev gmp-dev \
-            libc-dev libffi-dev libxml2-dev libxslt-dev \
-            linux-headers make ncurses-dev openssl-dev \
-            openssl-libs-static patch procps readline-dev \
-            readline-static yaml-dev yaml-static zlib-dev \
-            zlib-static tar xz curl rust git
 
       - name: Extract version info from formula
         id: info
@@ -70,22 +61,37 @@ jobs:
           echo "Resolved: Ruby $VERSION from $URL"
 
       - name: Build Ruby
-        run: bin/alpine "${{ steps.info.outputs.version }}" "${{ steps.info.outputs.url }}" "${{ steps.info.outputs.sha256 }}"
-
-      - name: Test Ruby
         run: |
-          mkdir -p test-ruby/
-          tar --strip-components 2 -C test-ruby -xf rubies/*.tar.gz
-          export PATH="${PWD}/test-ruby/bin:${PATH}"
-          ruby --version
-          ruby -e 'puts RUBY_DESCRIPTION'
-          ruby -rzlib -e 'puts Zlib.crc32("test")'
-          ruby -ryaml -e 'puts YAML.load("test: 1")'
-          ruby -ropenssl -e 'puts OpenSSL::Digest::SHA256.hexdigest("test")'
-          ruby -rreadline -e 'puts Readline::VERSION'
-          ruby -rfiddle -e 'puts Fiddle::RUBY_FREE'
-          ruby -e 'puts Gem.default_dir'
-          echo "All extension tests passed."
+          docker run --rm -v "$GITHUB_WORKSPACE:/src" -w /src ${{ env.ALPINE_IMAGE }} sh -c '
+            set -eu
+            apk add --no-cache \
+              autoconf bzip2 bzip2-dev ca-certificates coreutils \
+              dpkg-dev g++ gcc gdbm-dev glib-dev gmp-dev \
+              libc-dev libffi-dev libxml2-dev libxslt-dev \
+              linux-headers make ncurses-dev openssl-dev \
+              openssl-libs-static patch procps readline-dev \
+              readline-static yaml-dev yaml-static zlib-dev \
+              zlib-static tar xz curl rust git
+            bin/alpine "${{ steps.info.outputs.version }}" "${{ steps.info.outputs.url }}" "${{ steps.info.outputs.sha256 }}"
+          '
+
+      - name: Test Ruby on clean Alpine
+        run: |
+          docker run --rm -v "$GITHUB_WORKSPACE:/src" -w /src ${{ env.ALPINE_IMAGE }} sh -c '
+            set -eu
+            mkdir -p test-ruby/
+            tar --strip-components 2 -C test-ruby -xf rubies/*.tar.gz
+            export PATH="${PWD}/test-ruby/bin:${PATH}"
+            ruby --version
+            ruby -e "puts RUBY_DESCRIPTION"
+            ruby -rzlib -e "puts Zlib.crc32(\"test\")"
+            ruby -ryaml -e "puts YAML.load(\"test: 1\")"
+            ruby -ropenssl -e "puts OpenSSL::Digest::SHA256.hexdigest(\"test\")"
+            ruby -rreadline -e "puts Readline::VERSION"
+            ruby -rfiddle -e "puts Fiddle::RUBY_FREE"
+            ruby -e "puts Gem.default_dir"
+            echo "All extension tests passed."
+          '
 
       - name: Upload artifact
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
