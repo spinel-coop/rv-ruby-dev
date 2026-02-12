@@ -112,8 +112,7 @@ BUILD_TRIPLE="${ARCH}-alpine-linux-musl"
 mkdir -p "${INSTALL_PREFIX}"
 
 # Statically link libgcc so the Ruby binary is portable — users shouldn't
-# need gcc installed at runtime. Without this, libruby.so depends on
-# libgcc_s.so.1 for _Unwind_* symbols (GCC exception handling).
+# need gcc installed at runtime.
 export LDFLAGS="-static-libgcc"
 
 # Point pkg-config at our static-only directory so Ruby finds .a files
@@ -124,7 +123,7 @@ export PKG_CONFIG_PATH="${STATIC_DIR}/lib/pkgconfig"
   --prefix="${INSTALL_PREFIX}" \
   --build="${BUILD_TRIPLE}" \
   --enable-load-relative \
-  --enable-shared \
+  --disable-shared \
   --enable-yjit \
   --disable-install-doc \
   --disable-install-rdoc \
