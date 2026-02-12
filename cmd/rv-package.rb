@@ -68,6 +68,14 @@ module Homebrew
             unless args.no_uninstall_deps? || deps.empty?
               safe_system HOMEBREW_BREW_FILE, "uninstall", "--force", "--ignore-dependencies", *verbose, *deps
             end
+
+            # On Ubuntu for ARM, the permissions are somehow wrong and `brew test` dies
+            if File.exist? File.join(HOMEBREW_PREFIX, "Homebrew/Library/Homebrew/vendor/bundle")
+              safe_system "bash", "-c", 'chmod -R +t $(brew --prefix)/Homebrew/Library/Homebrew/vendor/bundle'
+              safe_system HOMEBREW_BREW_FILE, "install-bundler-gems"
+            end
+
+            # Test the static binary we just built, now that the separate deps have been deleted
             safe_system HOMEBREW_BREW_FILE, "test", *verbose, name
             puts "Linkage information:"
             safe_system HOMEBREW_BREW_FILE, "linkage", *verbose, name
@@ -94,13 +102,12 @@ module Homebrew
 
           json = File.read j
           json.gsub! "#{name}--", "ruby-"
-          json.gsub! /-HEAD-[a-f0-9]+/, ""
+          json.gsub! /-HEAD-[a-f0-9]+/, "-dev"
           json.gsub!(".sequoia.", ".ventura.")
           json.gsub!(".bottle.", yjit_tag)
           json.gsub! ERB::Util.url_encode(name), "ruby"
           hash = JSON.parse(json)
           bottle_name = name.gsub(/^rv-/, "")
-          bottle_name.gsub!("-dev", "@dev")
           hash[hash.keys.first]["formula"]["name"] = bottle_name
           hash[hash.keys.first]["formula"]["pkg_version"] = Date.today.to_s.tr("-", "")
           hash[hash.keys.first]["formula"]["pkg_version"] << "-" << commit if commit

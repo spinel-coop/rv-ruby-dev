@@ -23,8 +23,9 @@ class RvRuby < Formula
       keg_only "portable formulae are keg-only"
 
       option "without-yjit", "Build Ruby without YJIT (required for glibc < 2.35)"
+      option "without-zjit", "Build Ruby without ZJIT (required for rustc < 1.85)"
 
-      depends_on "rustup" => :build unless build.without? "yjit"
+      depends_on "rustup" => :build unless build.without?("yjit") && build.without?("zjit")
       depends_on "pkgconf" => :build
       depends_on "portable-libyaml@0.2.5" => :build
       depends_on "portable-openssl@3.5.1" => :build
@@ -34,7 +35,7 @@ class RvRuby < Formula
         depends_on "portable-libxcrypt@4.4.38" => :build
         depends_on "portable-zlib@1.3.1" => :build
 
-        if build.without? "yjit"
+        if build.without?("yjit") && build.without?("zjit")
           on_intel do
             depends_on "glibc@2.13" => :build
           end
@@ -75,9 +76,12 @@ class RvRuby < Formula
   end
 
   def install
-    if build.with? "yjit"
-      # share RUSTUP_HOME across installs if provided
-      ENV["RUSTUP_HOME"] = ENV["HOMEBREW_RUSTUP_HOME"] if ENV.key?("HOMEBREW_RUSTUP_HOME")
+    # share RUSTUP_HOME across installs if provided
+    ENV["RUSTUP_HOME"] = ENV["HOMEBREW_RUSTUP_HOME"] if ENV.key?("HOMEBREW_RUSTUP_HOME")
+    if build.with? "zjit"
+      ENV["RUSTUP_TOOLCHAIN"] = "1.85"
+      system "rustup install 1.85 --profile minimal" unless system("which rustc")
+    elsif build.with? "yjit"
       ENV["RUSTUP_TOOLCHAIN"] = "1.58"
       system "rustup install 1.58 --profile minimal" unless system("which rustc")
     end
@@ -107,6 +111,7 @@ class RvRuby < Formula
     ]
 
     args += %W[--enable-yjit] unless build.without? "yjit"
+    args += %W[--enable-zjit] unless build.without? "zjit"
 
     # We don't specify OpenSSL as we want it to use the pkg-config, which `--with-openssl-dir` will disable
     args += %W[
@@ -169,7 +174,7 @@ class RvRuby < Formula
         # Change e.g. `CONFIG["AR"] = "gcc-ar-11"` to `CONFIG["AR"] = "ar"`
         s.gsub!(/(CONFIG\[".+"\] = )"gcc-(.*)-\d+"/, '\\1"\\2"')
         # C++ compiler might have been disabled because we break it with glibc@* builds
-        s.sub!(/(CONFIG\["CXX"\] = )"false"/, '\\1"c++"') if build.without? "yjit"
+        s.sub!(/(CONFIG\["CXX"\] = )"false"/, '\\1"c++"') if build.without?("yjit") && build.without?("zjit")
       end
 
       # Ship libcrypt.a so that building native gems doesn't need system libcrypt installed.

@@ -1,0 +1,14 @@
+name: Daily
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "15 5 * * *"
+
+jobs:
+  daily:
+    permissions:
+      contents: write
+      packages: write
+    if: ${{ github.repository == 'spinel-coop/rv-ruby-dev' }}
+    uses: ./.github/workflows/release.yml
