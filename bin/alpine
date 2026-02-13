@@ -115,9 +115,8 @@ export LDFLAGS="-static-libgcc"
 # instead of system .so files.
 export PKG_CONFIG_PATH="${STATIC_DIR}/lib/pkgconfig"
 
-./configure \
-  --prefix="${INSTALL_PREFIX}" \
-  --build="${BUILD_TRIPLE}" \
+CONFIGURE_OPTS="--prefix=${INSTALL_PREFIX} \
+  --build=${BUILD_TRIPLE} \
   --enable-load-relative \
   --disable-shared \
   --enable-yjit \
@@ -125,13 +124,20 @@ export PKG_CONFIG_PATH="${STATIC_DIR}/lib/pkgconfig"
   --disable-install-rdoc \
   --disable-dependency-tracking \
   --with-static-linked-ext \
-  --with-libyaml-dir="${STATIC_DIR}" \
-  --with-libffi-dir="${STATIC_DIR}" \
-  --with-zlib-dir="${STATIC_DIR}" \
-  --with-readline-dir="${STATIC_DIR}" \
-  --with-gdbm-dir="${STATIC_DIR}" \
+  --with-libyaml-dir=${STATIC_DIR} \
+  --with-libffi-dir=${STATIC_DIR} \
+  --with-zlib-dir=${STATIC_DIR} \
+  --with-readline-dir=${STATIC_DIR} \
+  --with-gdbm-dir=${STATIC_DIR} \
   --with-out-ext=win32,win32ole \
-  --without-gmp
+  --without-gmp"
+
+# Enable ZJIT for Ruby 4.x
+if [ "${VERSION%%.*}" -ge 4 ]; then
+  CONFIGURE_OPTS="${CONFIGURE_OPTS} --enable-zjit"
+fi
+
+./configure "${CONFIGURE_OPTS}"
 
 # --- Build ---
 echo "=== Building Ruby ${VERSION} ($(nproc) jobs) ==="
