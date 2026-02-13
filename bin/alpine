@@ -44,11 +44,7 @@ echo "  Prefix: ${INSTALL_PREFIX}"
 # This forces the linker to use static libraries, producing a self-contained
 # binary that works on any Alpine without extra packages installed.
 echo "=== Preparing static dependency directories ==="
-mkdir -p "${STATIC_DIR}"
-
-for dep in yaml ffi z ssl crypto readline ncursesw gdbm; do
-  mkdir -p "${STATIC_DIR}/lib"
-done
+mkdir -p "${STATIC_DIR}/lib"
 mkdir -p "${STATIC_DIR}/include"
 
 # Copy static libraries
