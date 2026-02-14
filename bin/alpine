@@ -7,25 +7,21 @@
 # system packages. Dependencies are statically linked so the resulting
 # Ruby works on any Alpine system without extra packages installed.
 #
-# Usage: bin/alpine VERSION URL SHA256
-#   VERSION  Ruby version (e.g., 3.4.8)
-#   URL      Source tarball URL
-#   SHA256   Expected SHA256 checksum
+# Usage: bin/alpine FORMULA
+#   FORMULA  Name of Homebrew formula (e.g. rv-ruby@4.0.1)
 #
 # Output: rubies/ruby-VERSION.<arch>_linux_musl.tar.gz
-#
-# Required packages (install via apk):
-#   autoconf bzip2-dev ca-certificates coreutils curl dpkg-dev g++ gcc
-#   gdbm-dev glib-dev gmp-dev libc-dev libffi-dev libxml2-dev libxslt-dev
-#   linux-headers make ncurses-dev openssl-dev openssl-libs-static patch
-#   procps readline-dev readline-static rustup tar xz yaml-dev yaml-static
-#   zlib-dev zlib-static git
-
 set -eu
 
-VERSION="${1:?Usage: bin/alpine VERSION URL SHA256}"
-URL="${2:?Usage: bin/alpine VERSION URL SHA256}"
-SHA256="${3:?Usage: bin/alpine VERSION URL SHA256}"
+FORMULA_NAME="${1:?Usage: bin/alpine FORMULA \(e\.g\. rv-ruby\@4\.0\.1\)}"
+FORMULA="Formula/${FORMULA_NAME}.rb"
+if [ ! -f "$FORMULA" ]; then
+  echo "ERROR: Formula file not found: $FORMULA"
+  exit 1
+fi
+URL=$(grep 'url "' "$FORMULA" | head -1 | sed 's/.*url "//;s/".*//')
+SHA256=$(grep 'sha256 "' "$FORMULA" | head -1 | sed 's/.*sha256 "//;s/".*//')
+VERSION=$(echo "$FORMULA_NAME" | sed 's/rv-ruby@//')
 
 SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 BUILD_DIR="/tmp/ruby-src"

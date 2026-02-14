@@ -14,7 +14,6 @@ on:
         type: string
 
 env:
-  FORMULA: ${{ inputs.formula }}
   # Pinned, not :latest — the Alpine version determines the minimum Alpine
   # version users can run these binaries on (forward-compatible but not backward).
   # 3.21 was released Dec 2024 and is supported until Nov 2026.
@@ -42,28 +41,17 @@ jobs:
     steps:
       - uses: actions/checkout@main
 
-      - name: Extract version info from formula
-        id: info
-        run: |
-          FORMULA="Formula/${{ env.FORMULA }}.rb"
-          if [ ! -f "$FORMULA" ]; then
-            echo "ERROR: Formula file not found: $FORMULA"
-            exit 1
-          fi
-          URL=$(grep 'url "' "$FORMULA" | head -1 | sed 's/.*url "//;s/".*//')
-          SHA=$(grep 'sha256 "' "$FORMULA" | head -1 | sed 's/.*sha256 "//;s/".*//')
-          VERSION=$(echo "${{ env.FORMULA }}" | sed 's/rv-ruby@//')
-          echo "url=$URL" >> "$GITHUB_OUTPUT"
-          echo "sha256=$SHA" >> "$GITHUB_OUTPUT"
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          echo "Resolved: Ruby $VERSION from $URL"
-
       - name: Build Ruby
         run: |
           docker run --rm -v "$GITHUB_WORKSPACE:/src" -w /src ${{ env.ALPINE_IMAGE }} sh -c '
-            set -eu
-            bin/alpine "${{ steps.info.outputs.version }}" "${{ steps.info.outputs.url }}" "${{ steps.info.outputs.sha256 }}"
+            bin/alpine "${{ inputs.formula }}"
           '
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: ${{ env.FORMULA }}_alpine-${{ matrix.arch }}
+          path: rubies/*.tar.gz
 
       - name: Test Ruby on clean Alpine
         run: |
@@ -82,9 +70,3 @@ jobs:
             ruby -e "puts Gem.default_dir"
             echo "All extension tests passed."
           '
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
-        with:
-          name: ${{ env.FORMULA }}_alpine-${{ matrix.arch }}
-          path: rubies/*.tar.gz
