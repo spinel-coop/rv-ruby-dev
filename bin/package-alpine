@@ -1,0 +1,237 @@
+#!/bin/sh
+# Build Ruby from source on Alpine Linux (musl).
+#
+# This is the Alpine equivalent of the Homebrew-based build pipeline.
+# Homebrew can't run on Alpine (musl), so we compile from source using
+# system packages. Dependencies are statically linked so the resulting
+# Ruby works on any Alpine system without extra packages installed.
+#
+# Usage: bin/alpine FORMULA
+#   FORMULA  Name of Homebrew formula (e.g. rv-ruby@4.0.1)
+#
+# Output: rubies/ruby-VERSION.<arch>_linux_musl.tar.gz
+set -eu
+
+FORMULA_NAME="${1:?Usage: bin/alpine FORMULA \(e\.g\. rv-ruby\@4\.0\.1\)}"
+FORMULA="Formula/${FORMULA_NAME}.rb"
+if [ ! -f "$FORMULA" ]; then
+  echo "ERROR: Formula file not found: $FORMULA"
+  exit 1
+fi
+URL=$(grep 'url "' "$FORMULA" | head -1 | sed 's/.*url "//;s/".*//')
+SHA256=$(grep 'sha256 "' "$FORMULA" | head -1 | sed 's/.*sha256 "//;s/".*//')
+VERSION=$(echo "$FORMULA_NAME" | sed 's/rv-ruby@//')
+
+SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+BUILD_DIR="/tmp/ruby-src"
+INSTALL_PREFIX="/tmp/rv-ruby/rv-ruby@${VERSION}/${VERSION}"
+STATIC_DIR="/tmp/static-deps"
+OUTPUT_DIR="${SCRIPT_DIR}/rubies"
+
+echo "=== Building Ruby ${VERSION} for Alpine (musl) ==="
+echo "  URL:    ${URL}"
+echo "  SHA256: ${SHA256}"
+echo "  Prefix: ${INSTALL_PREFIX}"
+
+# -- Install packages ---
+apk add autoconf bzip2-dev ca-certificates coreutils curl dpkg-dev g++ gcc \
+  gdbm-dev glib-dev gmp-dev libc-dev libxml2-dev libxslt-dev \
+  linux-headers make ncurses-dev openssl-dev openssl-libs-static patch \
+  procps readline-dev readline-static rustup tar xz yaml-dev yaml-static \
+  zlib-dev zlib-static git
+
+# --- Install Rust ---
+rustup-init --profile minimal --default-toolchain stable -y
+. "$HOME/.cargo/env"
+
+# --- Prepare static-only dependency directories ---
+# Same approach as Homebrew portable-ruby: create directories containing only
+# static libraries (.a) and headers, then point Ruby's ./configure at them.
+# This forces the linker to use static libraries, producing a self-contained
+# binary that works on any Alpine without extra packages installed.
+echo "=== Preparing static dependency directories ==="
+mkdir -p "${STATIC_DIR}/lib"
+mkdir -p "${STATIC_DIR}/include"
+
+# Copy static libraries
+for lib in libyaml.a libz.a libssl.a libcrypto.a libreadline.a libncursesw.a libgdbm.a; do
+  if [ -f "/usr/lib/${lib}" ]; then
+    cp "/usr/lib/${lib}" "${STATIC_DIR}/lib/"
+    echo "  Static: ${lib}"
+  fi
+done
+
+# Copy headers (configure needs them to detect features)
+for dir in /usr/include/yaml.h /usr/include/zlib.h \
+           /usr/include/zconf.h /usr/include/openssl /usr/include/readline /usr/include/gdbm.h; do
+  if [ -e "$dir" ]; then
+    cp -r "$dir" "${STATIC_DIR}/include/"
+  fi
+done
+
+# Copy pkg-config files so Ruby's configure can find static deps
+mkdir -p "${STATIC_DIR}/lib/pkgconfig"
+for pc in yaml-0.1.pc zlib.pc openssl.pc libssl.pc libcrypto.pc readline.pc; do
+  if [ -f "/usr/lib/pkgconfig/${pc}" ]; then
+    cp "/usr/lib/pkgconfig/${pc}" "${STATIC_DIR}/lib/pkgconfig/"
+  fi
+done
+
+set -vx
+
+# Compile libffi statically with -fPIC so we can link it later.
+# If we try to use the libffi from apk like the others above, the linker fails:
+#   ld: /tmp/static-deps/lib/libffi.a(prep_cif.o): relocation R_X86_64_PC32
+#   against symbol `ffi_type_sint32' can not be used when making a shared
+#   object; recompile with -fPIC
+(
+  mkdir -p $BUILD_DIR
+  cd $BUILD_DIR
+  curl -LO https://github.com/libffi/libffi/releases/download/v3.5.1/libffi-3.5.1.tar.gz
+  tar xfvz libffi-3.5.1.tar.gz
+  cd libffi-3.5.1
+  export CFLAGS="-fPIC"
+  ./configure --enable-static --disable-shared --prefix=${STATIC_DIR}
+  make install
+)
+
+# --- Download and verify ---
+echo "=== Downloading Ruby source ==="
+mkdir -p "${BUILD_DIR}"
+cd "${BUILD_DIR}"
+curl -fsSL -o "ruby-${VERSION}.tar.gz" "${URL}"
+
+echo "${SHA256}  ruby-${VERSION}.tar.gz" | sha256sum -c -
+echo "Checksum verified."
+
+# --- Extract ---
+echo "=== Extracting source ==="
+tar xzf "ruby-${VERSION}.tar.gz"
+cd "ruby-${VERSION}"
+
+# --- Apply musl thread-stack patch ---
+# musl's pthread_getattr_np() returns ~80KB for the main thread stack,
+# causing SystemStackError. This patch (from Ruby Bug #19716) parses
+# /proc/self/maps instead. Required until upstream Ruby merges the fix.
+# See patches/README.md for full provenance.
+echo "=== Applying musl thread-stack patch ==="
+if patch -p1 --dry-run -i "${SCRIPT_DIR}/patches/musl-thread-stack-fix.patch" > /dev/null 2>&1; then
+  patch -p1 -i "${SCRIPT_DIR}/patches/musl-thread-stack-fix.patch"
+  echo "Patch applied successfully."
+else
+  echo "Patch does not apply cleanly (may already be fixed upstream). Skipping."
+fi
+
+# --- Configure ---
+echo "=== Configuring Ruby ${VERSION} ==="
+
+# Detect build architecture for configure
+ARCH="$(uname -m)"
+BUILD_TRIPLE="${ARCH}-alpine-linux-musl"
+
+mkdir -p "${INSTALL_PREFIX}"
+
+# Statically link libgcc so the Ruby binary is portable — users shouldn't
+# need gcc installed at runtime.
+export LDFLAGS="-static-libgcc"
+
+# Point pkg-config at our static-only directory so Ruby finds .a files
+# instead of system .so files.
+export PKG_CONFIG_PATH="${STATIC_DIR}/lib/pkgconfig"
+
+# Enable ZJIT for Ruby 4.x
+if [ "${VERSION%%.*}" -ge 4 ]; then
+  ./configure "--prefix=${INSTALL_PREFIX}" \
+    "--build=${BUILD_TRIPLE}" \
+    --enable-load-relative \
+    --disable-shared \
+    --enable-yjit \
+    --disable-install-doc \
+    --disable-install-rdoc \
+    --disable-dependency-tracking \
+    --with-static-linked-ext \
+    --with-libyaml-dir=${STATIC_DIR} \
+    --with-libffi-dir=${STATIC_DIR} \
+    --with-zlib-dir=${STATIC_DIR} \
+    --with-readline-dir=${STATIC_DIR} \
+    --with-gdbm-dir=${STATIC_DIR} \
+    --with-out-ext=win32,win32ole \
+    --without-gmp \
+    --enable-zjit
+else
+  ./configure "--prefix=${INSTALL_PREFIX}" \
+    "--build=${BUILD_TRIPLE}" \
+    --enable-load-relative \
+    --disable-shared \
+    --enable-yjit \
+    --disable-install-doc \
+    --disable-install-rdoc \
+    --disable-dependency-tracking \
+    --with-static-linked-ext \
+    --with-libyaml-dir=${STATIC_DIR} \
+    --with-libffi-dir=${STATIC_DIR} \
+    --with-zlib-dir=${STATIC_DIR} \
+    --with-readline-dir=${STATIC_DIR} \
+    --with-gdbm-dir=${STATIC_DIR} \
+    --with-out-ext=win32,win32ole \
+    --without-gmp
+fi
+
+# --- Build ---
+echo "=== Building Ruby ${VERSION} ($(nproc) jobs) ==="
+make -j "$(nproc)"
+
+# --- Install ---
+echo "=== Installing Ruby ${VERSION} ==="
+make install
+
+# --- Strip debug symbols to reduce tarball size ---
+# Same approach as Docker official ruby:alpine. --strip-unneeded removes
+# debug symbols while preserving the dynamic section (RPATH, etc.).
+echo "=== Stripping binaries ==="
+BEFORE_SIZE=$(du -sh "${INSTALL_PREFIX}" | cut -f1)
+find "${INSTALL_PREFIX}" -type f \( -perm -u+x -o -name '*.so' -o -name '*.so.*' \) \
+  -exec strip --strip-unneeded {} + 2>/dev/null || true
+AFTER_SIZE=$(du -sh "${INSTALL_PREFIX}" | cut -f1)
+echo "  Before: ${BEFORE_SIZE}, After: ${AFTER_SIZE}"
+
+# --- Verify the built Ruby works ---
+echo "=== Verifying Ruby installation ==="
+"${INSTALL_PREFIX}/bin/ruby" --version
+"${INSTALL_PREFIX}/bin/ruby" -e 'puts "Ruby #{RUBY_VERSION} on #{RUBY_PLATFORM}"'
+
+# Verify JIT compiled (requires rust at build time)
+"${INSTALL_PREFIX}/bin/ruby" --yjit -e 'puts "YJIT: #{RubyVM::YJIT.enabled?}"'
+"${INSTALL_PREFIX}/bin/ruby" --zjit -e 'puts "ZJIT: #{RubyVM::ZJIT.enabled?}"'
+
+# Verify statically linked extensions work
+"${INSTALL_PREFIX}/bin/ruby" -ryaml -e 'puts "yaml: ok"'
+"${INSTALL_PREFIX}/bin/ruby" -rfiddle -e 'puts "fiddle: ok"'
+"${INSTALL_PREFIX}/bin/ruby" -rzlib -e 'puts "zlib: ok"'
+"${INSTALL_PREFIX}/bin/ruby" -ropenssl -e 'puts "openssl: ok"'
+"${INSTALL_PREFIX}/bin/ruby" -rreadline -e 'puts "readline: ok"'
+
+# --- Package ---
+# rv expects tarballs with internal prefix: rv-ruby@{version}/{version}/
+# rv's extract_tarball() rewrites this to ruby-{version}/ on extraction.
+echo "=== Packaging tarball ==="
+mkdir -p "${OUTPUT_DIR}"
+
+# Map uname arch to rv's naming convention
+case "${ARCH}" in
+  x86_64)  ARCH_STR="x86_64_linux_musl" ;;
+  aarch64) ARCH_STR="arm64_linux_musl" ;;
+  *)       echo "ERROR: unsupported architecture: ${ARCH}"; exit 1 ;;
+esac
+
+TARBALL="${OUTPUT_DIR}/ruby-${VERSION}.${ARCH_STR}.tar.gz"
+
+cd /tmp/rv-ruby
+tar czf "${TARBALL}" "rv-ruby@${VERSION}"
+
+# --- Cleanup ---
+rm -rf "${BUILD_DIR}" "${STATIC_DIR}"
+
+echo "=== Done ==="
+echo "Output: ${TARBALL}"
+ls -lh "${TARBALL}"
