@@ -18,7 +18,7 @@
 #   autoconf bzip2-dev ca-certificates coreutils curl dpkg-dev g++ gcc
 #   gdbm-dev glib-dev gmp-dev libc-dev libffi-dev libxml2-dev libxslt-dev
 #   linux-headers make ncurses-dev openssl-dev openssl-libs-static patch
-#   procps readline-dev readline-static rust tar xz yaml-dev yaml-static
+#   procps readline-dev readline-static rustup tar xz yaml-dev yaml-static
 #   zlib-dev zlib-static git
 
 set -eu
@@ -37,6 +37,10 @@ echo "=== Building Ruby ${VERSION} for Alpine (musl) ==="
 echo "  URL:    ${URL}"
 echo "  SHA256: ${SHA256}"
 echo "  Prefix: ${INSTALL_PREFIX}"
+
+# --- Install Rust ---
+rustup-init --profile minimal --default-toolchain stable -y
+. "$HOME/.cargo/env"
 
 # --- Prepare static-only dependency directories ---
 # Same approach as Homebrew portable-ruby: create directories containing only
@@ -176,8 +180,9 @@ echo "=== Verifying Ruby installation ==="
 "${INSTALL_PREFIX}/bin/ruby" --version
 "${INSTALL_PREFIX}/bin/ruby" -e 'puts "Ruby #{RUBY_VERSION} on #{RUBY_PLATFORM}"'
 
-# Verify YJIT compiled (requires rust at build time)
+# Verify JIT compiled (requires rust at build time)
 "${INSTALL_PREFIX}/bin/ruby" --yjit -e 'puts "YJIT: #{RubyVM::YJIT.enabled?}"'
+"${INSTALL_PREFIX}/bin/ruby" --zjit -e 'puts "ZJIT: #{RubyVM::ZJIT.enabled?}"'
 
 # Verify statically linked extensions work
 "${INSTALL_PREFIX}/bin/ruby" -ryaml -e 'puts "yaml: ok"'
