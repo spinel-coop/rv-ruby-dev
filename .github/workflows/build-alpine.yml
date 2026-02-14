@@ -50,7 +50,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
-          name: ${{ env.FORMULA }}_alpine-${{ matrix.arch }}
+          name: ${{ inputs.formula }}_alpine-${{ matrix.arch }}
           path: rubies/*.tar.gz
 
       - name: Test Ruby on clean Alpine
