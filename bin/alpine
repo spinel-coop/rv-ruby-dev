@@ -1,0 +1,13 @@
+#!/bin/bash
+
+PLATFORM=${1:-arm64}
+
+if docker ps --all | grep "rv-alpine-$PLATFORM" > /dev/null; then
+  set -v
+  docker start -a "rv-alpine-$PLATFORM"
+else
+  DIR="$( cd "$( dirname "${BASH_SOURCE[0]}"/ )/.." && pwd )"
+  ALPINE_IMAGE="$(cat "$DIR"/.github/workflows/build-alpine.yml | grep 'ALPINE_IMAGE:' | sed -e 's/ \{1,\}ALPINE_IMAGE: //')"
+  set -v
+  docker run -it --name "rv-alpine-$PLATFORM" --volume .:/src --platform "linux/$PLATFORM" "$ALPINE_IMAGE"
+fi
