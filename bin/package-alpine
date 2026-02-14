@@ -35,7 +35,7 @@ echo "  Prefix: ${INSTALL_PREFIX}"
 
 # -- Install packages ---
 apk add autoconf bzip2-dev ca-certificates coreutils curl dpkg-dev g++ gcc \
-  gdbm-dev glib-dev gmp-dev libc-dev libffi-dev libxml2-dev libxslt-dev \
+  gdbm-dev glib-dev gmp-dev libc-dev libxml2-dev libxslt-dev \
   linux-headers make ncurses-dev openssl-dev openssl-libs-static patch \
   procps readline-dev readline-static rustup tar xz yaml-dev yaml-static \
   zlib-dev zlib-static git
@@ -54,7 +54,7 @@ mkdir -p "${STATIC_DIR}/lib"
 mkdir -p "${STATIC_DIR}/include"
 
 # Copy static libraries
-for lib in libyaml.a libffi.a libz.a libssl.a libcrypto.a libreadline.a libncursesw.a libgdbm.a; do
+for lib in libyaml.a libz.a libssl.a libcrypto.a libreadline.a libncursesw.a libgdbm.a; do
   if [ -f "/usr/lib/${lib}" ]; then
     cp "/usr/lib/${lib}" "${STATIC_DIR}/lib/"
     echo "  Static: ${lib}"
@@ -62,7 +62,7 @@ for lib in libyaml.a libffi.a libz.a libssl.a libcrypto.a libreadline.a libncurs
 done
 
 # Copy headers (configure needs them to detect features)
-for dir in /usr/include/yaml.h /usr/include/ffi.h /usr/include/ffi /usr/include/zlib.h \
+for dir in /usr/include/yaml.h /usr/include/zlib.h \
            /usr/include/zconf.h /usr/include/openssl /usr/include/readline /usr/include/gdbm.h; do
   if [ -e "$dir" ]; then
     cp -r "$dir" "${STATIC_DIR}/include/"
@@ -71,11 +71,29 @@ done
 
 # Copy pkg-config files so Ruby's configure can find static deps
 mkdir -p "${STATIC_DIR}/lib/pkgconfig"
-for pc in yaml-0.1.pc libffi.pc zlib.pc openssl.pc libssl.pc libcrypto.pc readline.pc; do
+for pc in yaml-0.1.pc zlib.pc openssl.pc libssl.pc libcrypto.pc readline.pc; do
   if [ -f "/usr/lib/pkgconfig/${pc}" ]; then
     cp "/usr/lib/pkgconfig/${pc}" "${STATIC_DIR}/lib/pkgconfig/"
   fi
 done
+
+set -vx
+
+# Compile libffi statically with -fPIC so we can link it later.
+# If we try to use the libffi from apk like the others above, the linker fails:
+#   ld: /tmp/static-deps/lib/libffi.a(prep_cif.o): relocation R_X86_64_PC32
+#   against symbol `ffi_type_sint32' can not be used when making a shared
+#   object; recompile with -fPIC
+(
+  mkdir -p $BUILD_DIR
+  cd $BUILD_DIR
+  curl -LO https://github.com/libffi/libffi/releases/download/v3.5.1/libffi-3.5.1.tar.gz
+  tar xfvz libffi-3.5.1.tar.gz
+  cd libffi-3.5.1
+  export CFLAGS="-fPIC"
+  ./configure --enable-static --disable-shared --prefix=${STATIC_DIR}
+  make install
+)
 
 # --- Download and verify ---
 echo "=== Downloading Ruby source ==="
