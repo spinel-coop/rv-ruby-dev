@@ -1,7 +1,6 @@
 name: Build Alpine
 
 on:
-  pull_request: # temporary — remove after workflow is verified on CI
   workflow_dispatch:
     inputs:
       formula:
@@ -15,8 +14,7 @@ on:
         type: string
 
 env:
-  # Default formula for pull_request trigger (which doesn't provide inputs)
-  FORMULA: ${{ inputs.formula || 'rv-ruby@3.4.8' }}
+  FORMULA: ${{ inputs.formula }}
   # Pinned, not :latest — the Alpine version determines the minimum Alpine
   # version users can run these binaries on (forward-compatible but not backward).
   # 3.21 was released Dec 2024 and is supported until Nov 2026.
