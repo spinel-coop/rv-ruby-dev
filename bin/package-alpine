@@ -1,5 +1,4 @@
 #!/bin/sh
-# bin/alpine
 # Build Ruby from source on Alpine Linux (musl).
 #
 # This is the Alpine equivalent of the Homebrew-based build pipeline.
@@ -25,7 +24,7 @@ VERSION=$(echo "$FORMULA_NAME" | sed 's/rv-ruby@//')
 
 SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 BUILD_DIR="/tmp/ruby-src"
-INSTALL_PREFIX="/tmp/ruby-install/rv-ruby@${VERSION}/${VERSION}"
+INSTALL_PREFIX="/tmp/rv-ruby/rv-ruby@${VERSION}/${VERSION}"
 STATIC_DIR="/tmp/static-deps"
 OUTPUT_DIR="${SCRIPT_DIR}/rubies"
 
@@ -209,7 +208,7 @@ esac
 
 TARBALL="${OUTPUT_DIR}/ruby-${VERSION}.${ARCH_STR}.tar.gz"
 
-cd /tmp/ruby-install
+cd /tmp/rv-ruby
 tar czf "${TARBALL}" "rv-ruby@${VERSION}"
 
 # --- Cleanup ---
