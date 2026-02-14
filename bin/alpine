@@ -38,6 +38,13 @@ echo "  URL:    ${URL}"
 echo "  SHA256: ${SHA256}"
 echo "  Prefix: ${INSTALL_PREFIX}"
 
+# -- Install packages ---
+apk add autoconf bzip2-dev ca-certificates coreutils curl dpkg-dev g++ gcc \
+  gdbm-dev glib-dev gmp-dev libc-dev libffi-dev libxml2-dev libxslt-dev \
+  linux-headers make ncurses-dev openssl-dev openssl-libs-static patch \
+  procps readline-dev readline-static rustup tar xz yaml-dev yaml-static \
+  zlib-dev zlib-static git
+
 # --- Install Rust ---
 rustup-init --profile minimal --default-toolchain stable -y
 . "$HOME/.cargo/env"

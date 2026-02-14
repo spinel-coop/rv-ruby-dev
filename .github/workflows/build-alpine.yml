@@ -62,14 +62,6 @@ jobs:
         run: |
           docker run --rm -v "$GITHUB_WORKSPACE:/src" -w /src ${{ env.ALPINE_IMAGE }} sh -c '
             set -eu
-            apk add --no-cache \
-              autoconf bzip2 bzip2-dev ca-certificates coreutils \
-              dpkg-dev g++ gcc gdbm-dev glib-dev gmp-dev \
-              libc-dev libffi-dev libxml2-dev libxslt-dev \
-              linux-headers make ncurses-dev openssl-dev \
-              openssl-libs-static patch procps readline-dev \
-              readline-static yaml-dev yaml-static zlib-dev \
-              zlib-static tar xz curl rustup git
             bin/alpine "${{ steps.info.outputs.version }}" "${{ steps.info.outputs.url }}" "${{ steps.info.outputs.sha256 }}"
           '
 
