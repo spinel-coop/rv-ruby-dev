@@ -69,7 +69,7 @@ jobs:
               linux-headers make ncurses-dev openssl-dev \
               openssl-libs-static patch procps readline-dev \
               readline-static yaml-dev yaml-static zlib-dev \
-              zlib-static tar xz curl rust git
+              zlib-static tar xz curl rustup git
             bin/alpine "${{ steps.info.outputs.version }}" "${{ steps.info.outputs.url }}" "${{ steps.info.outputs.sha256 }}"
           '
 
