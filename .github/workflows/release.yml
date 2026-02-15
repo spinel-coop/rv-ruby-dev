@@ -35,6 +35,8 @@ jobs:
             # without a filter, build all but rv-ruby-dev
             list=${list/'"'rv-ruby-dev'"',/}
           fi
+          echo 'setting $formulas to:'
+          echo "$list"
           echo formulas=$list >> "$GITHUB_OUTPUT"
           echo "date=$(date +%Y%m%d)" >> "$GITHUB_OUTPUT"
 
@@ -49,6 +51,7 @@ jobs:
       formula: ${{ matrix.formula }}
 
   build-alpine:
+    if: ${{ needs.setup.outputs.formulas != '["rv-ruby-dev"]' }}
     needs: setup
     strategy:
       fail-fast: false
@@ -60,6 +63,7 @@ jobs:
 
   release:
     needs: [setup, build-homebrew, build-alpine]
+    if: always()
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -67,6 +71,9 @@ jobs:
     env:
       TAG: ${{ needs.setup.outputs.date }}
     steps:
+      - name: Fail if required builds failed
+        if: ${{ needs.build-alpine.result == 'failure' }}
+        run: exit 1
       - uses: actions/checkout@main
       - name: Install Homebrew
         run: |
