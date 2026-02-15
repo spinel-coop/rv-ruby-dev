@@ -32,13 +32,8 @@ jobs:
             # if we passed a string, only build matches
             list=$(echo $list | jq --compact-output 'map(select(. | contains("${{ inputs.formula }}")))')
           else
-            if [[ "${{ github.repository }}" == "spinel-coop/rv-ruby-dev" ]]; then
-              # without a filter, the dev repo only builds dev
-              list='["rv-ruby-dev"]'
-            else
-              # without a filter, the non-dev repo builds all but dev
-              list=${list/'"'rv-ruby-dev'"',/}
-            fi
+            # without a filter, build all but rv-ruby-dev
+            list=${list/'"'rv-ruby-dev'"',/}
           fi
           echo formulas=$list >> "$GITHUB_OUTPUT"
           echo "date=$(date +%Y%m%d)" >> "$GITHUB_OUTPUT"
