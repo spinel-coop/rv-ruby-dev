@@ -58,7 +58,7 @@ module Homebrew
             puts "Bottled deps: #{bottled_deps.inspect}"
             puts "Other deps: #{deps.inspect}"
 
-            safe_system HOMEBREW_BREW_FILE, "install", *verbose, *bottled_deps if bottled_deps.any?
+            quiet_system HOMEBREW_BREW_FILE, "install", *verbose, *bottled_deps if bottled_deps.any?
 
             # Build bottles for all other dependencies.
             safe_system HOMEBREW_BREW_FILE, "install", "--build-bottle", *verbose, *deps if deps.any?
