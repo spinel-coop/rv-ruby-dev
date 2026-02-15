@@ -2,6 +2,10 @@ name: Release
 
 on:
   workflow_call:
+    inputs:
+      formula:
+        required: false
+        type: string
   workflow_dispatch:
     inputs:
       formula:
