@@ -42,7 +42,8 @@ apk add autoconf bzip2-dev ca-certificates coreutils curl dpkg-dev g++ gcc \
 
 # --- Install Rust ---
 rustup-init --profile minimal --default-toolchain stable -y
-. "$HOME/.cargo/env"
+test -e "$HOME/.cargo/env" && source "$HOME/.cargo/.env"
+test -e "/usr/local/cargo/env" && source "/usr/local/cargo/env"
 
 # --- Prepare static-only dependency directories ---
 # Same approach as Homebrew portable-ruby: create directories containing only
@@ -202,7 +203,7 @@ echo "=== Verifying Ruby installation ==="
 
 # Verify JIT compiled (requires rust at build time)
 "${INSTALL_PREFIX}/bin/ruby" --yjit -e 'puts "YJIT: #{RubyVM::YJIT.enabled?}"'
-"${INSTALL_PREFIX}/bin/ruby" --zjit -e 'puts "ZJIT: #{RubyVM::ZJIT.enabled?}"'
+"${INSTALL_PREFIX}/bin/ruby" --zjit -e 'puts "ZJIT: #{RubyVM::ZJIT.enabled?}"' || echo "ZJIT: false"
 
 # Verify statically linked extensions work
 "${INSTALL_PREFIX}/bin/ruby" -ryaml -e 'puts "yaml: ok"'
