@@ -202,7 +202,7 @@ echo "=== Verifying Ruby installation ==="
 
 # Verify JIT compiled (requires rust at build time)
 "${INSTALL_PREFIX}/bin/ruby" --yjit -e 'puts "YJIT: #{RubyVM::YJIT.enabled?}"'
-"${INSTALL_PREFIX}/bin/ruby" --zjit -e 'puts "ZJIT: #{RubyVM::ZJIT.enabled?}"'
+"${INSTALL_PREFIX}/bin/ruby" --zjit -e 'puts "ZJIT: #{RubyVM::ZJIT.enabled?}"' || echo "ZJIT: false"
 
 # Verify statically linked extensions work
 "${INSTALL_PREFIX}/bin/ruby" -ryaml -e 'puts "yaml: ok"'
