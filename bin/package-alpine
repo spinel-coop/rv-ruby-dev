@@ -22,11 +22,11 @@ URL=$(grep 'url "' "$FORMULA" | head -1 | sed 's/.*url "//;s/".*//')
 SHA256=$(grep 'sha256 "' "$FORMULA" | head -1 | sed 's/.*sha256 "//;s/".*//')
 VERSION=$(echo "$FORMULA_NAME" | sed 's/rv-ruby@//')
 
-SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
-BUILD_DIR="/tmp/ruby-src"
-INSTALL_PREFIX="/tmp/rv-ruby/rv-ruby@${VERSION}/${VERSION}"
-STATIC_DIR="/tmp/static-deps"
-OUTPUT_DIR="${SCRIPT_DIR}/rubies"
+SRC_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+export BUILD_DIR="/tmp/ruby-src"
+export INSTALL_PREFIX="/tmp/rv-ruby/rv-ruby@${VERSION}/${VERSION}"
+export STATIC_DIR="/tmp/static-deps"
+export OUTPUT_DIR="${SRC_DIR}/rubies"
 
 echo "=== Building Ruby ${VERSION} for Alpine (musl) ==="
 echo "  URL:    ${URL}"
@@ -42,8 +42,8 @@ apk add autoconf bzip2-dev ca-certificates coreutils curl dpkg-dev g++ gcc \
 
 # --- Install Rust ---
 rustup-init --profile minimal --default-toolchain stable -y
-(test -e "$HOME/.cargo/env" && . "$HOME/.cargo/env") || \
-  (test -e "/usr/local/cargo/env" && . "/usr/local/cargo/env")
+# shellcheck source=/dev/null
+. "$HOME/.cargo/env"
 
 # --- Prepare static-only dependency directories ---
 # Same approach as Homebrew portable-ruby: create directories containing only
@@ -100,15 +100,22 @@ set -vx
 echo "=== Downloading Ruby source ==="
 mkdir -p "${BUILD_DIR}"
 cd "${BUILD_DIR}"
-curl -fsSL -o "ruby-${VERSION}.tar.gz" "${URL}"
+curl -fsSL -O "${URL}"
+PACKAGE="$(ls ruby-*.tar*)"
 
-echo "${SHA256}  ruby-${VERSION}.tar.gz" | sha256sum -c -
+echo "${SHA256}  ${PACKAGE}" | sha256sum -c -
 echo "Checksum verified."
 
-# --- Extract ---
-echo "=== Extracting source ==="
-tar xzf "ruby-${VERSION}.tar.gz"
-cd "ruby-${VERSION}"
+if test ./"$PACKAGE" = "./ruby-$VERSION"*".gz"; then
+  tar xfvz "$PACKAGE"
+elif test ./"$PACKAGE" = "./ruby-$VERSION"*".xz"; then
+  tar xfvJ "$PACKAGE"
+else
+  echo "Unknown package type $PACKAGE"
+  exit 1
+fi
+
+cd "ruby-${VERSION}"*
 
 # --- Apply musl thread-stack patch ---
 # musl's pthread_getattr_np() returns ~80KB for the main thread stack,
@@ -116,8 +123,8 @@ cd "ruby-${VERSION}"
 # /proc/self/maps instead. Required until upstream Ruby merges the fix.
 # See patches/README.md for full provenance.
 echo "=== Applying musl thread-stack patch ==="
-if patch -p1 --dry-run -i "${SCRIPT_DIR}/patches/musl-thread-stack-fix.patch" > /dev/null 2>&1; then
-  patch -p1 -i "${SCRIPT_DIR}/patches/musl-thread-stack-fix.patch"
+if patch -p1 --dry-run -i "${SRC_DIR}/patches/musl-thread-stack-fix.patch" > /dev/null 2>&1; then
+  patch -p1 -i "${SRC_DIR}/patches/musl-thread-stack-fix.patch"
   echo "Patch applied successfully."
 else
   echo "Patch does not apply cleanly (may already be fixed upstream). Skipping."
@@ -128,7 +135,7 @@ echo "=== Configuring Ruby ${VERSION} ==="
 
 # Detect build architecture for configure
 ARCH="$(uname -m)"
-BUILD_TRIPLE="${ARCH}-alpine-linux-musl"
+export BUILD_TRIPLE="${ARCH}-alpine-linux-musl"
 
 mkdir -p "${INSTALL_PREFIX}"
 
@@ -140,42 +147,20 @@ export LDFLAGS="-static-libgcc"
 # instead of system .so files.
 export PKG_CONFIG_PATH="${STATIC_DIR}/lib/pkgconfig"
 
-# Enable ZJIT for Ruby 4.x
-if [ "${VERSION%%.*}" -ge 4 ]; then
-  ./configure "--prefix=${INSTALL_PREFIX}" \
-    "--build=${BUILD_TRIPLE}" \
-    --enable-load-relative \
-    --disable-shared \
-    --enable-yjit \
-    --disable-install-doc \
-    --disable-install-rdoc \
-    --disable-dependency-tracking \
-    --with-static-linked-ext \
-    --with-libyaml-dir=${STATIC_DIR} \
-    --with-libffi-dir=${STATIC_DIR} \
-    --with-zlib-dir=${STATIC_DIR} \
-    --with-readline-dir=${STATIC_DIR} \
-    --with-gdbm-dir=${STATIC_DIR} \
-    --with-out-ext=win32,win32ole \
-    --without-gmp \
-    --enable-zjit
-else
-  ./configure "--prefix=${INSTALL_PREFIX}" \
-    "--build=${BUILD_TRIPLE}" \
-    --enable-load-relative \
-    --disable-shared \
-    --enable-yjit \
-    --disable-install-doc \
-    --disable-install-rdoc \
-    --disable-dependency-tracking \
-    --with-static-linked-ext \
-    --with-libyaml-dir=${STATIC_DIR} \
-    --with-libffi-dir=${STATIC_DIR} \
-    --with-zlib-dir=${STATIC_DIR} \
-    --with-readline-dir=${STATIC_DIR} \
-    --with-gdbm-dir=${STATIC_DIR} \
-    --with-out-ext=win32,win32ole \
-    --without-gmp
+# Find and run version-specific build script
+for VERSION_PATTERN in "${VERSION}" "${VERSION%.*}" "${VERSION%%.*}"; do
+  SCRIPT="${SRC_DIR}/alpine/${VERSION_PATTERN}.sh"
+  if [ -f "$SCRIPT" ]; then
+    echo "=== Running build script: ${SCRIPT} ==="
+    eval "$(cat "$SCRIPT")"
+    break
+  fi
+done
+
+# Make sure we found a script
+if [ ! -f "$SCRIPT" ]; then
+  echo "Could not find a build script for ${VERSION}!"
+  exit 1
 fi
 
 # --- Build ---
