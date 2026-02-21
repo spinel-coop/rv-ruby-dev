@@ -14,19 +14,13 @@ class PortableZlibAT131 < PortableFormula
     formula "zlib"
   end
 
-  # https://zlib.net/zlib_how.html
-  resource "test_artifact" do
-    file "test/fixture/zpipe.c"
-    sha256 "e79717cefd20043fb78d730fd3b9d9cdf8f4642307fc001879dc82ddb468509f"
-  end
-
   def install
     system "./configure", "--static", "--prefix=#{prefix}"
     system "make", "install"
   end
 
   test do
-    testpath.install resource("test_artifact")
+    testpath.join("zpipe.c").write(File.read(File.expand_path("../test/fixture/zpipe.c", __dir__)))
     system ENV.cc, "zpipe.c", "-I#{include}", "-L#{lib}", "-lz", "-o", "zpipe"
 
     touch "foo.txt"
