@@ -49,11 +49,13 @@ jobs:
 
       - name: Upload artifact
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        if: ${{ hashFiles('rubies/') != '' }}
         with:
           name: ${{ inputs.formula }}_alpine-${{ matrix.arch }}
           path: rubies/*.tar.gz
 
       - name: Test Ruby on clean Alpine
+        if: ${{ hashFiles('rubies/') != '' }}
         run: |
           docker run --rm -v "$GITHUB_WORKSPACE:/src" -w /src ${{ env.ALPINE_IMAGE }} sh -c '
             set -eu
