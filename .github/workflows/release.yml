@@ -66,7 +66,6 @@ jobs:
 
   release:
     needs: [setup, build-homebrew, build-alpine]
-    if: always()
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -74,10 +73,6 @@ jobs:
     env:
       TAG: ${{ needs.setup.outputs.date }}
     steps:
-      - name: Fail if required builds failed
-        if: ${{ needs.build-alpine.result == 'failure' }}
-        run: exit 1
-
       - uses: actions/checkout@main
 
       - name: Install Homebrew
