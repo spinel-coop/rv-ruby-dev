@@ -155,11 +155,11 @@ export LDFLAGS="-static-libgcc"
 # instead of system .so files.
 export PKG_CONFIG_PATH="${STATIC_DIR}/lib/pkgconfig"
 
-# Find and run version-specific build script
+# Find and run version-specific configure script
 for VERSION_PATTERN in "${VERSION}" "${VERSION%.*}" "${VERSION%%.*}"; do
   SCRIPT="${SRC_DIR}/alpine/${VERSION_PATTERN}.sh"
   if [ -f "$SCRIPT" ]; then
-    echo "=== Running build script: ${SCRIPT} ==="
+    echo "=== Running configure script: ${SCRIPT} ==="
     eval "$(cat "$SCRIPT")"
     break
   fi
@@ -167,7 +167,7 @@ done
 
 # Make sure we found a script
 if [ ! -f "$SCRIPT" ]; then
-  echo "Could not find a build script for ${VERSION}!"
+  echo "Could not find a configure script for ${VERSION}!"
   exit 1
 fi
 
