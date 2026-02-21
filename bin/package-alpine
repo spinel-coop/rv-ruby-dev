@@ -189,6 +189,9 @@ find "${INSTALL_PREFIX}" -type f \( -perm -u+x -o -name '*.so' -o -name '*.so.*'
 AFTER_SIZE=$(du -sh "${INSTALL_PREFIX}" | cut -f1)
 echo "  Before: ${BEFORE_SIZE}, After: ${AFTER_SIZE}"
 
+# --- Remove .lock files (Ruby 3.3.5 only for some reason)
+rm -rf "${INSTALL_PREFIX}/bin/*.lock"
+
 # --- Verify the built Ruby works ---
 echo "=== Verifying Ruby installation ==="
 "${INSTALL_PREFIX}/bin/ruby" --version
