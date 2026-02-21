@@ -155,11 +155,11 @@ export LDFLAGS="-static-libgcc"
 # instead of system .so files.
 export PKG_CONFIG_PATH="${STATIC_DIR}/lib/pkgconfig"
 
-# Find and run version-specific build script
+# Find and run version-specific configure script
 for VERSION_PATTERN in "${VERSION}" "${VERSION%.*}" "${VERSION%%.*}"; do
   SCRIPT="${SRC_DIR}/alpine/${VERSION_PATTERN}.sh"
   if [ -f "$SCRIPT" ]; then
-    echo "=== Running build script: ${SCRIPT} ==="
+    echo "=== Running configure script: ${SCRIPT} ==="
     eval "$(cat "$SCRIPT")"
     break
   fi
@@ -167,7 +167,7 @@ done
 
 # Make sure we found a script
 if [ ! -f "$SCRIPT" ]; then
-  echo "Could not find a build script for ${VERSION}!"
+  echo "Could not find a configure script for ${VERSION}!"
   exit 1
 fi
 
@@ -188,6 +188,9 @@ find "${INSTALL_PREFIX}" -type f \( -perm -u+x -o -name '*.so' -o -name '*.so.*'
   -exec strip --strip-unneeded {} + 2>/dev/null || true
 AFTER_SIZE=$(du -sh "${INSTALL_PREFIX}" | cut -f1)
 echo "  Before: ${BEFORE_SIZE}, After: ${AFTER_SIZE}"
+
+# --- Remove .lock files (Ruby 3.3.5 only for some reason)
+rm -rf "${INSTALL_PREFIX}/bin/*.lock"
 
 # --- Verify the built Ruby works ---
 echo "=== Verifying Ruby installation ==="
