@@ -16,13 +16,8 @@ class PortableZlibAT131 < PortableFormula
 
   # https://zlib.net/zlib_how.html
   resource "test_artifact" do
-    url "https://zlib.net/zpipe.c"
-    version "20260211"
+    file "test/fixture/zpipe.c"
     sha256 "e79717cefd20043fb78d730fd3b9d9cdf8f4642307fc001879dc82ddb468509f"
-
-    livecheck do
-      skip "Static test artifact"
-    end
   end
 
   def install
