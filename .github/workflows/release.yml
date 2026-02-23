@@ -102,7 +102,7 @@ jobs:
           merge-multiple: true
 
       - name: Upload to GitHub Packages
-        if: ${{ inputs.formula == '' }}
+        if: ${{ inputs.formula == '' || inputs.formula == 'rv-ruby-dev' }}
         working-directory: rubies
         env:
           HOMEBREW_GITHUB_PACKAGES_USER: ${{ github.actor }}
@@ -117,14 +117,14 @@ jobs:
           gh release create "${TAG}" --notes "rv ruby ${TAG}" --target "$(git rev-parse --verify HEAD)" --title "${TAG}" --prerelease
 
       - name: Upload Homebrew bottles to GitHub Releases
-        if: ${{ inputs.formula == '' }}
+        if: ${{ inputs.formula == '' || inputs.formula == 'rv-ruby-dev' }}
         working-directory: rubies
         env:
           HOMEBREW_GITHUB_API_TOKEN: ${{ github.token }}
         run: brew rv-upload --debug --root-url="https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}"
 
       - name: Upload Alpine tarballs to GitHub Releases
-        if: ${{ inputs.formula == '' }}
+        if: ${{ inputs.formula == '' || inputs.formula == 'rv-ruby-dev' }}
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
@@ -135,7 +135,7 @@ jobs:
           done
 
       - name: Release
-        if: ${{ inputs.formula == '' }}
+        if: ${{ inputs.formula == '' || inputs.formula == 'rv-ruby-dev' }}
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
