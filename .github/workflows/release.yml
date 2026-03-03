@@ -46,6 +46,10 @@ jobs:
 
   build-homebrew:
     needs: setup
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
     strategy:
       fail-fast: false
       matrix:
@@ -56,6 +60,10 @@ jobs:
 
   build-alpine:
     needs: setup
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
     strategy:
       fail-fast: false
       matrix:
@@ -70,6 +78,8 @@ jobs:
     permissions:
       contents: write
       packages: write
+      id-token: write
+      attestations: write
     env:
       TAG: ${{ needs.setup.outputs.date }}
     steps:
@@ -100,6 +110,18 @@ jobs:
           pattern: rv-ruby*
           path: rubies
           merge-multiple: true
+
+      - name: Generate SHA256 checksums
+        if: ${{ inputs.formula == '' }}
+        working-directory: rubies
+        run: |
+          shopt -s nullglob
+          files=(./*.tar.gz)
+          if (( ${#files[@]} == 0 )); then
+            echo "No tarballs found in rubies/" >&2
+            exit 1
+          fi
+          shasum -a 256 "${files[@]}" | sed 's| \./|  |' > SHA256SUMS
 
       - name: Upload to GitHub Packages
         if: ${{ inputs.formula == '' }}
@@ -133,6 +155,27 @@ jobs:
             echo "Uploading Alpine artifact: $f"
             gh release upload "${TAG}" "$f" --clobber
           done
+
+      - name: Upload checksums to GitHub Release
+        if: ${{ inputs.formula == '' }}
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: gh release upload "${TAG}" rubies/SHA256SUMS --clobber
+
+      - name: Verify checksums upload integrity
+        if: ${{ inputs.formula == '' }}
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          gh release download "${TAG}" --pattern SHA256SUMS --dir /tmp/verify --clobber
+          diff rubies/SHA256SUMS /tmp/verify/SHA256SUMS
+          echo "SHA256SUMS round-trip verification passed"
+
+      - name: Generate release artifact provenance attestations
+        if: ${{ inputs.formula == '' }}
+        uses: actions/attest@v4.1.0
+        with:
+          subject-checksums: rubies/SHA256SUMS
 
       - name: Release
         if: ${{ inputs.formula == '' }}
