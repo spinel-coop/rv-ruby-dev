@@ -14,6 +14,8 @@ on:
 
 permissions:
   contents: read
+  id-token: write
+  attestations: write
 
 env:
   HOMEBREW_DEVELOPER: 1
@@ -77,6 +79,11 @@ jobs:
         with:
           name: ${{ inputs.formula }}_${{ matrix.runner }}
           path: ${{ github.workspace }}/rubies
+
+      - name: Generate build attestation
+        uses: actions/attest@v4.1.0
+        with:
+          subject-path: rubies/*.tar.gz
 
       - name: Test Portable Ruby
         run: |
