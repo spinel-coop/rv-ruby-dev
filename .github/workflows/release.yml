@@ -116,12 +116,12 @@ jobs:
         working-directory: rubies
         run: |
           shopt -s nullglob
-          files=(./*.tar.gz)
+          files=(*.tar.gz)
           if (( ${#files[@]} == 0 )); then
             echo "No tarballs found in rubies/" >&2
             exit 1
           fi
-          shasum -a 256 "${files[@]}" | sed 's| \./|  |' > SHA256SUMS
+          shasum -a 256 -- "${files[@]}" > SHA256SUMS
 
       - name: Upload to GitHub Packages
         if: ${{ inputs.formula == '' || inputs.formula == 'rv-ruby-dev' }}
