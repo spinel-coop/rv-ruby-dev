@@ -29,6 +29,8 @@ class RvRuby34 < Formula
       depends_on "portable-libyaml@0.2.5" => :build
       depends_on "portable-openssl@3.5.1" => :build
 
+      skip_clean "lib/ruby/gems"
+
       on_linux do
         depends_on "portable-libffi@3.5.1" => :build
         depends_on "portable-libxcrypt@4.4.38" => :build
