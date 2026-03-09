@@ -26,7 +26,9 @@ jobs:
       formulas: ${{ steps.setup.outputs.formulas }}
       date: ${{ steps.setup.outputs.date }}
     steps:
-      - uses: actions/checkout@main
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
       - run: date
       - run: date +%Y%m%d
       - id: setup
@@ -83,7 +85,9 @@ jobs:
     env:
       TAG: ${{ needs.setup.outputs.date }}
     steps:
-      - uses: actions/checkout@main
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
 
       - name: Install Homebrew
         run: |

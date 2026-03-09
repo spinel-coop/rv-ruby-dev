@@ -41,7 +41,9 @@ jobs:
     # GitHub's JS-based actions (checkout, upload-artifact) don't support
     # Alpine containers on ARM runners.
     steps:
-      - uses: actions/checkout@main
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
 
       - name: Build Ruby
         run: |
