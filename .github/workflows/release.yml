@@ -32,11 +32,13 @@ jobs:
       - run: date
       - run: date +%Y%m%d
       - id: setup
+        env:
+          FORMULA_FILTER: ${{ inputs.formula }}
         run: |
           list=$(ls Formula/rv-ruby* | jq --raw-input | jq --slurp --compact-output 'map(. |= .[8:-3])')
-          if [[ -n "${{ inputs.formula }}" ]]; then
+          if [[ -n "$FORMULA_FILTER" ]]; then
             # if we passed a string, only build matches
-            list=$(echo $list | jq --compact-output 'map(select(. | contains("${{ inputs.formula }}")))')
+            list=$(echo "$list" | jq --compact-output --arg f "$FORMULA_FILTER" 'map(select(. | contains($f)))')
           else
             # without a filter, build all but rv-ruby-dev
             list=${list/'"'rv-ruby-dev'"',/}

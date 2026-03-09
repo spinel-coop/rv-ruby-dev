@@ -46,9 +46,11 @@ jobs:
           persist-credentials: false
 
       - name: Build Ruby
+        env:
+          FORMULA: ${{ inputs.formula }}
         run: |
-          docker run --rm -v "$GITHUB_WORKSPACE:/src" -w /src ${{ env.ALPINE_IMAGE }} sh -c '
-            bin/package-alpine "${{ inputs.formula }}"
+          docker run --rm -v "$GITHUB_WORKSPACE:/src" -w /src -e FORMULA "$ALPINE_IMAGE" sh -c '
+            bin/package-alpine "$FORMULA"
           '
 
       - name: Upload artifact
