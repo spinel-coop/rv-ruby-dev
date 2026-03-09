@@ -9,7 +9,7 @@ First, [install `rv`](https://github.com/spinel-coop/rv), and then run `rv ruby 
 ## Local development
 
 - Run `bin/setup` to tap your checkout of this repo as `spinel-coop/rv-ruby`.
-- Run e.g. `bin/package rv-ruby@3.4.5` to build Ruby 3.4.5 locally with YJIT.
+- Run e.g. `bin/package 3.4.5` to build Ruby 3.4.5 locally with YJIT.
 - Run e.g. `bin/package-alpine rv-ruby@3.4.5` to use Docker to build Ruby 3.4.5 on Alpine Linux with musl libc.
 
 ## How do I issue a new release
