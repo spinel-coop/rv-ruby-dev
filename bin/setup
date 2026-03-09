@@ -3,7 +3,7 @@ set -euo pipefail
 set -x
 
 DIRNAME="$(basename "$(pwd)")"
-if brew tap | grep -F "spinel-coop/$DIRNAME"; then
+if brew tap | grep -x "spinel-coop/$DIRNAME"; then
   brew untap "spinel-coop/$DIRNAME" --force
 fi
 brew tap "spinel-coop/$DIRNAME" .
