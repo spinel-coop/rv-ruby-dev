@@ -1,5 +1,3 @@
-# This file is synced from the `.github` repository, do not modify it directly.
----
 version: 2
 multi-ecosystem-groups:
   all:
@@ -17,7 +15,7 @@ updates:
   allow:
   - dependency-type: all
   cooldown:
-    default-days: 1
+    default-days: 7
     include:
     - "*"
 
