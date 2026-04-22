@@ -41,12 +41,16 @@ jobs:
     # GitHub's JS-based actions (checkout, upload-artifact) don't support
     # Alpine containers on ARM runners.
     steps:
-      - uses: actions/checkout@main
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
 
       - name: Build Ruby
+        env:
+          FORMULA: ${{ inputs.formula }}
         run: |
-          docker run --rm -v "$GITHUB_WORKSPACE:/src" -w /src ${{ env.ALPINE_IMAGE }} sh -c '
-            bin/package-alpine "${{ inputs.formula }}"
+          docker run --rm -v "$GITHUB_WORKSPACE:/src" -w /src -e FORMULA "$ALPINE_IMAGE" sh -c '
+            bin/package-alpine "$FORMULA"
           '
 
       - name: Upload artifact
@@ -58,7 +62,7 @@ jobs:
 
       - name: Generate build attestation
         if: ${{ hashFiles('rubies/*.tar.gz') != '' }}
-        uses: actions/attest@v4.1.0
+        uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26 # v4.1.0
         with:
           subject-path: rubies/*.tar.gz
 

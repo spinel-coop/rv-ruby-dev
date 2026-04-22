@@ -26,15 +26,19 @@ jobs:
       formulas: ${{ steps.setup.outputs.formulas }}
       date: ${{ steps.setup.outputs.date }}
     steps:
-      - uses: actions/checkout@main
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
       - run: date
       - run: date +%Y%m%d
       - id: setup
+        env:
+          FORMULA_FILTER: ${{ inputs.formula }}
         run: |
           list=$(ls Formula/rv-ruby* | jq --raw-input | jq --slurp --compact-output 'map(. |= .[8:-3])')
-          if [[ -n "${{ inputs.formula }}" ]]; then
+          if [[ -n "$FORMULA_FILTER" ]]; then
             # if we passed a string, only build matches
-            list=$(echo $list | jq --compact-output 'map(select(. | contains("${{ inputs.formula }}")))')
+            list=$(echo "$list" | jq --compact-output --arg f "$FORMULA_FILTER" 'map(select(. | contains($f)))')
           else
             # without a filter, build all but rv-ruby-dev
             list=${list/'"'rv-ruby-dev'"',/}
@@ -83,7 +87,9 @@ jobs:
     env:
       TAG: ${{ needs.setup.outputs.date }}
     steps:
-      - uses: actions/checkout@main
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
 
       - name: Install Homebrew
         run: |
@@ -174,7 +180,7 @@ jobs:
 
       - name: Generate release artifact provenance attestations
         if: ${{ inputs.formula == '' }}
-        uses: actions/attest@v4.1.0
+        uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26 # v4.1.0
         with:
           subject-checksums: rubies/SHA256SUMS
 
