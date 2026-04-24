@@ -23,6 +23,22 @@ module Homebrew
         named_args :formula, min: 1
       end
 
+      def prune
+        if defined?(Dependable::PRUNE)
+          Dependable::PRUNE
+        else
+          Dependency.prune
+        end
+      end
+
+      def keep_but_prune_recursive_deps
+        if defined?(Dependable::KEEP_BUT_PRUNE_RECURSIVE_DEPS)
+          Dependable::KEEP_BUT_PRUNE_RECURSIVE_DEPS
+        else
+          Dependency.keep_but_prune_recursive_deps
+        end
+      end
+
       sig { override.void }
       def run
         ENV["HOMEBREW_DEVELOPER"] = "1"
@@ -46,12 +62,12 @@ module Homebrew
             # Install build deps (but not static-linked deps) from bottles, to save compilation time
             bottled_dep_allowlist = /\A(?:glibc@|linux-headers@|ruby@|rustup|autoconf|pkgconf|bison)/
             deps = Dependency.expand(Formula[name], cache_key: "rv-package-#{name}") do |_dependent, dep|
-              Dependency.prune if dep.test? || dep.optional?
-              Dependency.prune if dep.name == "rustup" && args.without_yjit?
+              next prune if dep.test? || dep.optional?
+              next prune if dep.name == "rustup" && args.without_yjit?
 
               next unless bottled_dep_allowlist.match?(dep.name)
 
-              Dependency.keep_but_prune_recursive_deps
+              keep_but_prune_recursive_deps
             end.map(&:name)
 
             bottled_deps, deps = deps.partition { |dep| bottled_dep_allowlist.match?(dep) }
