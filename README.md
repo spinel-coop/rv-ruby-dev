@@ -12,6 +12,15 @@ First, [install `rv`](https://github.com/spinel-coop/rv), and then run `rv ruby 
 - Run e.g. `bin/package 3.4.5` to build Ruby 3.4.5 locally with YJIT.
 - Run e.g. `bin/package-alpine rv-ruby@3.4.5` to use Docker to build Ruby 3.4.5 on Alpine Linux with musl libc.
 
+## Sanitizer builds
+
+Ruby 3.4 and later can also be built with AddressSanitizer and UndefinedBehaviorSanitizer, for finding memory errors in Ruby and in native extensions. These builds are much slower and are never installed by default.
+
+- Run e.g. `bin/package 4.0.9 --with-sanitizers` to build one locally. It needs Homebrew's `llvm`, and produces `ruby-4.0.9.<platform>.asan_ubsan.tar.gz`.
+- Dispatch the release workflow with `sanitizers` checked to add them to a release, for macOS and glibc Linux. ASan doesn't support musl, so there are no Alpine sanitizer builds.
+- On macOS, the ASan runtime is shipped in `lib/` next to Ruby.
+- Native gems are compiled with the sanitizer flags, which needs clang 18 or later. On Linux any `clang` on `PATH` works. On macOS it must be Homebrew's (`brew install llvm`), because Apple clang's ASan instrumentation is incompatible with the LLVM runtime.
+
 ## How do I issue a new release
 
 [An automated release workflow is available to use](https://github.com/spinel-coop/rv-ruby/actions/workflows/release.yml).

@@ -25,7 +25,7 @@ fi
 
 set -x
 brew uninstall --force "$PACKAGE"
-brew rv-package "$PACKAGE" \
+brew rv-package "$PACKAGE" "${@:2}" \
   --no-uninstall-deps \
   --debug \
   --verbose
