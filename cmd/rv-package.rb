@@ -24,6 +24,9 @@ module Homebrew
                description: "Pass `--verbose` to `brew` commands."
         switch "--without-yjit",
                description: "Build Ruby without YJIT included."
+        switch "--with-sanitizers",
+               description: "Build Ruby with AddressSanitizer and UndefinedBehaviorSanitizer. " \
+                            "Packages are named `ruby-<version>.<platform>.asan_ubsan.tar.gz`."
         named_args :formula, min: 1
       end
 
@@ -53,6 +56,7 @@ module Homebrew
 
         flags = []
         flags << "--without-yjit" if args.without_yjit?
+        flags << "--with-sanitizers" if args.with_sanitizers?
 
         # If test-bot cleanup is performed and auto-updates are disabled, this might not already be installed.
         unless DevelopmentTools.curl_handles_most_https_certificates?
@@ -107,15 +111,20 @@ module Homebrew
             ]
             safe_system HOMEBREW_BREW_FILE, "bottle", *verbose, *bottle_args, name
 
-            rename_bottles name, args.without_yjit?
+            rename_bottles name, args.without_yjit?, args.with_sanitizers?
           rescue => e
             ofail e
           end
         end
       end
 
-      def rename_bottles(name, disable_yjit)
-        yjit_tag = disable_yjit ? ".no_yjit." : "."
+      def rename_bottles(name, disable_yjit, sanitizers)
+        variants = []
+        variants << "no_yjit" if disable_yjit
+        variants << "asan_ubsan" if sanitizers
+        # Sorted so a combination of variants always produces the same asset name.
+        variants.sort!
+        variant_tag = [nil, *variants, nil].join(".")
 
         Dir.glob("*.bottle.json").each do |j|
           commit = j.match(/-HEAD-([a-f0-9]+)/){|m|m[1]}
@@ -124,10 +133,16 @@ module Homebrew
           json.gsub! "#{name}--", "ruby-"
           json.gsub!(/-HEAD-[a-f0-9]+/, "-dev")
           json.gsub!(".sequoia.", ".ventura.")
-          json.gsub!(".bottle.", yjit_tag)
+          json.gsub!(".bottle.", variant_tag)
           json.gsub! ERB::Util.url_encode(name), "ruby"
           hash = JSON.parse(json)
           bottle_name = name.gsub(/^rv-/, "")
+          if variants.any?
+            # Keep variants apart from the default build when `rv-upload` merges JSON files,
+            # and publish them as their own GitHub Packages image.
+            bottle_name = bottle_name.sub(/\Aruby/, "ruby-#{variants.join("-")}")
+            hash = hash.transform_keys { |key| "#{key}-#{variants.join("-")}" }
+          end
           hash[hash.keys.first]["formula"]["name"] = bottle_name
           hash[hash.keys.first]["formula"]["pkg_version"] = Date.today.to_s.tr("-", "")
           hash[hash.keys.first]["formula"]["pkg_version"] << "-" << commit if commit
@@ -138,7 +153,7 @@ module Homebrew
           r = f.gsub("#{name}--", "ruby-")
           r = r.gsub(/-HEAD-[a-f0-9]+/, "-dev")
           r = r.gsub(".sequoia.", ".ventura.")
-          r = r.gsub(".bottle.", yjit_tag)
+          r = r.gsub(".bottle.", variant_tag)
           FileUtils.mv f, r
         end
       end

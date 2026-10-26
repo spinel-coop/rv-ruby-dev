@@ -16,3 +16,4 @@ jobs:
     uses: ./.github/workflows/release.yml
     with:
       formula: rv-ruby-dev
+      sanitizers: true
