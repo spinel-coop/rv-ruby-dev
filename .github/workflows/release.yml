@@ -109,8 +109,8 @@ jobs:
 
   release:
     needs: [setup, build-homebrew, build-alpine, build-sanitizers]
-    # build-sanitizers is skipped unless requested
-    if: ${{ !failure() && !cancelled() }}
+    # build-sanitizers is optional; a failure there should not block
+    if: ${{ !cancelled() && needs.build-homebrew.result == 'success' && needs.build-alpine.result == 'success' }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
