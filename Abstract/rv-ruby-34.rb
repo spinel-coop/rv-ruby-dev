@@ -2,6 +2,7 @@
 # frozen_string_literal: true
 
 require File.expand_path("../Abstract/rv-portable-formula", __dir__)
+require File.expand_path("../Abstract/rv-ruby-sanitizers", __dir__)
 
 # on macOS, Ruby builds require a BASERUBY already available on the system with
 # the same version. I wasn't able to get the Homebrew formula for ruby working
@@ -26,7 +27,9 @@ class RvRuby34 < Formula
       keg_only "portable formulae are keg-only"
 
       option "without-yjit", "Build Ruby without YJIT (required for glibc < 2.35)"
+      option "with-sanitizers", "Build Ruby with AddressSanitizer and UndefinedBehaviorSanitizer"
 
+      depends_on "llvm" => :build if build.with? "sanitizers"
       depends_on "rustup" => :build unless build.without? "yjit"
       depends_on "pkgconf" => :build
       depends_on "rv-portable-openssl" => :build
@@ -75,6 +78,7 @@ class RvRuby34 < Formula
       end
 
       prepend RvPortableFormulaMixin
+      include RvRubySanitizers
     end
   end
 
@@ -119,6 +123,7 @@ class RvRuby34 < Formula
     end
 
     args += %w[--enable-yjit] unless build.without? "yjit"
+    args += sanitizer_configure_args if build.with? "sanitizers"
 
     # We don't specify OpenSSL as we want it to use the pkg-config, which `--with-openssl-dir` will disable
     args += %W[
@@ -150,6 +155,7 @@ class RvRuby34 < Formula
     ENV["cflags"] = ENV.delete("CFLAGS")
     ENV["cppflags"] = ENV.delete("CPPFLAGS")
     ENV["cxxflags"] = ENV.delete("CXXFLAGS")
+    append_sanitizer_flags if build.with? "sanitizers"
 
     system "./configure", *args
     system "make", "extract-gems"
@@ -175,18 +181,26 @@ class RvRuby34 < Formula
 
     if OS.linux?
       # Don't restrict to a specific GCC compiler binary we used (e.g. gcc-5).
-      inreplace lib/"ruby/#{abi_version}/#{abi_arch}/rbconfig.rb" do |s|
-        # Change e.g. `CONFIG["AR"] = "gcc-ar-11"` or "gcc-ar" to `CONFIG["AR"] = "ar"`.
-        s.gsub!(/(CONFIG\[".+"\] = )"gcc-(\w+)(-\d+)?"/, '\\1"\\2"')
-        # Change other instances of e.g. "gcc" to be generic
-        s.gsub!(ENV.cxx, "c++")
-        s.gsub!(ENV.cc, "cc")
-        # C++ compiler might have been disabled because we break it with glibc@* builds
-        s.sub!(/(CONFIG\["CXX"\] = )"false"/, '\\1"c++"') if build.without?("yjit")
+      # Sanitizer builds use clang, and fix_sanitizer_rbconfig handles them instead.
+      unless build.with? "sanitizers"
+        inreplace lib/"ruby/#{abi_version}/#{abi_arch}/rbconfig.rb" do |s|
+          # Change e.g. `CONFIG["AR"] = "gcc-ar-11"` or "gcc-ar" to `CONFIG["AR"] = "ar"`.
+          s.gsub!(/(CONFIG\[".+"\] = )"gcc-(\w+)(-\d+)?"/, '\\1"\\2"')
+          # Change other instances of e.g. "gcc" to be generic
+          s.gsub!(ENV.cxx, "c++")
+          s.gsub!(ENV.cc, "cc")
+          # C++ compiler might have been disabled because we break it with glibc@* builds
+          s.sub!(/(CONFIG\["CXX"\] = )"false"/, '\\1"c++"') if build.without?("yjit")
+        end
       end
 
       # Ship libcrypt.a so that building native gems doesn't need system libcrypt installed.
       cp libxcrypt.lib/"libcrypt.a", lib/"libcrypt.a"
+    end
+
+    if build.with? "sanitizers"
+      fix_sanitizer_rbconfig lib/"ruby/#{abi_version}/#{abi_arch}/rbconfig.rb"
+      bundle_sanitizer_runtime
     end
 
     libexec.mkpath

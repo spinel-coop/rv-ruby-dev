@@ -6,11 +6,20 @@ on:
       formula:
         required: true
         type: string
+      sanitizers:
+        description: "Build with AddressSanitizer and UndefinedBehaviorSanitizer (Ruby 3.4+)"
+        required: false
+        type: boolean
+        default: false
   workflow_call:
     inputs:
       formula:
         required: true
         type: string
+      sanitizers:
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -72,18 +81,23 @@ jobs:
           HOMEBREW_NO_INSTALL_CLEANUP: 1
           SETUP_RUBY_PREFIX: ${{ steps.setup-ruby.outputs.ruby-prefix }}
           FORMULA: ${{ inputs.formula }}
+          SANITIZERS: ${{ inputs.sanitizers }}
         run: |
           if [[ -n "$SETUP_RUBY_PREFIX" ]]; then
             export HOMEBREW_BASERUBY="${SETUP_RUBY_PREFIX}/bin/ruby"
           fi
+          flags=()
+          if [[ "$SANITIZERS" == "true" ]]; then
+            flags+=(--with-sanitizers)
+          fi
           mkdir -p rubies/
           cd rubies
-          brew rv-package --verbose "$FORMULA"
+          brew rv-package --verbose "${flags[@]}" "$FORMULA"
 
       - name: Upload rv Ruby
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: ${{ inputs.formula }}_${{ matrix.runner }}
+          name: ${{ inputs.formula }}_${{ matrix.runner }}${{ inputs.sanitizers && '_asan_ubsan' || '' }}
           path: ${{ github.workspace }}/rubies
 
       - name: Generate build attestation
