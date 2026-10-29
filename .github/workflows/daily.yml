@@ -13,6 +13,7 @@ jobs:
       id-token: write
       attestations: write
     if: ${{ github.repository == 'spinel-coop/rv-ruby-dev' }}
-    uses: ./.github/workflows/release.yml
+    uses: $/.github/workflows/release.yml
     with:
       formula: rv-ruby-dev
+      sanitizers: true

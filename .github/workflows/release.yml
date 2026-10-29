@@ -6,11 +6,20 @@ on:
       formula:
         required: false
         type: string
+      sanitizers:
+        required: false
+        type: boolean
+        default: false
   workflow_dispatch:
     inputs:
       formula:
         required: false
         type: string
+      sanitizers:
+        description: "Also build ASan+UBSan variants of Ruby 3.4+ (macOS and glibc Linux only)"
+        required: false
+        type: boolean
+        default: false
 
 env:
   HOMEBREW_DEVELOPER: 1
@@ -24,6 +33,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       formulas: ${{ steps.setup.outputs.formulas }}
+      sanitizer_formulas: ${{ steps.setup.outputs.sanitizer_formulas }}
       date: ${{ steps.setup.outputs.date }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -46,6 +56,11 @@ jobs:
           echo 'setting $formulas to:'
           echo "$list"
           echo formulas=$list >> "$GITHUB_OUTPUT"
+          # Sanitizer builds need Ruby 3.4+ (the RvRuby34 and RvRuby abstract formulae)
+          sanitizer_list=$(grep -lE '< RvRuby(34)?$' Formula/rv-ruby* | jq --raw-input | jq --slurp --compact-output --argjson list "$list" 'map(.[8:-3]) | map(select(. as $f | $list | index($f)))')
+          echo 'setting $sanitizer_formulas to:'
+          echo "$sanitizer_list"
+          echo sanitizer_formulas=$sanitizer_list >> "$GITHUB_OUTPUT"
           echo "date=$(date +%Y%m%d)" >> "$GITHUB_OUTPUT"
 
   build-homebrew:
@@ -58,9 +73,25 @@ jobs:
       fail-fast: false
       matrix:
         formula: ${{ fromJSON(needs.setup.outputs.formulas) }}
-    uses: ./.github/workflows/build.yml
+    uses: $/.github/workflows/build.yml
     with:
       formula: ${{ matrix.formula }}
+
+  build-sanitizers:
+    needs: setup
+    if: ${{ inputs.sanitizers && needs.setup.outputs.sanitizer_formulas != '[]' }}
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    strategy:
+      fail-fast: false
+      matrix:
+        formula: ${{ fromJSON(needs.setup.outputs.sanitizer_formulas) }}
+    uses: $/.github/workflows/build.yml
+    with:
+      formula: ${{ matrix.formula }}
+      sanitizers: true
 
   build-alpine:
     needs: setup
@@ -72,12 +103,14 @@ jobs:
       fail-fast: false
       matrix:
         formula: ${{ fromJSON(needs.setup.outputs.formulas) }}
-    uses: ./.github/workflows/build-alpine.yml
+    uses: $/.github/workflows/build-alpine.yml
     with:
       formula: ${{ matrix.formula }}
 
   release:
-    needs: [setup, build-homebrew, build-alpine]
+    needs: [setup, build-homebrew, build-alpine, build-sanitizers]
+    # build-sanitizers is skipped unless requested
+    if: ${{ !failure() && !cancelled() }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
