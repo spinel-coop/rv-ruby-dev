@@ -73,7 +73,7 @@ jobs:
       fail-fast: false
       matrix:
         formula: ${{ fromJSON(needs.setup.outputs.formulas) }}
-    uses: ./.github/workflows/build.yml
+    uses: $/.github/workflows/build.yml
     with:
       formula: ${{ matrix.formula }}
 
@@ -88,7 +88,7 @@ jobs:
       fail-fast: false
       matrix:
         formula: ${{ fromJSON(needs.setup.outputs.sanitizer_formulas) }}
-    uses: ./.github/workflows/build.yml
+    uses: $/.github/workflows/build.yml
     with:
       formula: ${{ matrix.formula }}
       sanitizers: true
@@ -103,7 +103,7 @@ jobs:
       fail-fast: false
       matrix:
         formula: ${{ fromJSON(needs.setup.outputs.formulas) }}
-    uses: ./.github/workflows/build-alpine.yml
+    uses: $/.github/workflows/build-alpine.yml
     with:
       formula: ${{ matrix.formula }}
 
